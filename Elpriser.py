@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime as dt
 import pickle
 import uuid
+import time
 
 
 # Get the MAC address of the current device to check if the user is authorized to run the program
@@ -21,20 +22,26 @@ if current_id not in AUTHORIZED_IDS:
     exit(1)
 
 
-# Function to fetch current exchange rate from DKK to EUR from ExchangeRate-API
-def fetch_exchange_rate(api_key):
-    url = f"https://api.exchangerate-api.com/v4/latest/DKK"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.json()
-        return data['rates']['EUR']
-    else:
-        print(f"Failed to fetch exchange rate. Error code: {response.status_code}")
-        return None
+# Function to fetch current exchange rate from DKK to EUR from ExchangeRate-API. Returns None if unsuccessful.
+def fetch_exchange_rate(api_key, max_retries=3):
+    # Try max_retries times to fetch the exchange rate.
+    for attempt in range(max_retries):
+        url = f"https://api.exchangerate-api.com/v4/latest/DKK"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            data = response.json()
+            return data['rates']['EUR']
+
+        print(f"Failed to fetch exchange rate. Attempt {attempt + 1}. Status code: {response.status_code}. Retrying...")
+        time.sleep(2 ** attempt)
+
+    print(f"Failed to fetch exchange rate after {max_retries} attempts.")
+    return None
 
 
 # Fetch the current exchange rate from DKK to EUR
-api_key = "c26cf82c420f4ffee62965e1"
+api_key = "API_KEY"
 conversion_rate_dkk_to_eur = fetch_exchange_rate(api_key)
 
 # Load the last specified percentiles
@@ -44,14 +51,32 @@ try:
 except FileNotFoundError:
     x_last, y_last = None, None
 
-# GET data from ENERGY DATA SERVICE API
-response = requests.get('https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&filter=%20%7B' +
-                        '%22PriceArea%22%3A%20%22DK1%2CDK2%22%7D')
 
-# Check if response is OK
-if response.status_code == 200:
-    # Convert response to JSON
-    data = response.json()
+# Function to fetch electricity prices from EnergiDataService. Returns None if unsuccessful. Retries max_retries times.
+def fetch_electricity_prices(max_retries=3):
+    response = None  # Initialize response to None
+    for attempt in range(max_retries):
+        try:
+            response = requests.get('https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&filter'
+                                    '=%20%7B' + '%22PriceArea%22%3A%20%22DK1%2CDK2%22%7D')
+            if response.status_code == 200:
+                return response.json(), response.status_code
+        except requests.RequestException as e:
+            print(f"An error occurred: {e}")
+
+        print(
+            f"Failed to fetch electricity prices. Attempt {attempt + 1}. Status code: {response.status_code if response else 'N/A'}. Retrying...")
+        time.sleep(2 ** attempt)
+
+    print(f"Failed to fetch electricity prices after {max_retries} attempts.")
+    return None, response.status_code if response else 'N/A'
+
+
+# Fetch the data
+data, status_code = fetch_electricity_prices()
+
+# If response is OK, continue
+if data:
 
     # Extract data from JSON
     records = [record for record in data['records'] if record['PriceArea'] in ['DK1', 'DK2']]
@@ -170,4 +195,4 @@ if response.status_code == 200:
 
     # If response is not OK, print error message
 else:
-    print('Error: ' + str(response.status_code))
+    print('Error: ' + str(status_code))
