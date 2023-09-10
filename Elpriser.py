@@ -198,12 +198,15 @@ if data:
         daily_min_eur = prices_df['SpotPriceEUR'].idxmin()
         daily_max_eur = prices_df['SpotPriceEUR'].idxmax()
         price_diff_eur = prices_df.loc[daily_max_eur, 'SpotPriceEUR'] - prices_df.loc[daily_min_eur, 'SpotPriceEUR']
-        print(f'The price difference between the daily minimum and maximum is {price_diff_eur} EUR/MWh')
+        print("\n*** SPOT PRICE DIFFERENCE ***")
+        print(f'The price difference between the daily minimum and maximum is {price_diff_eur} EUR/MWh\n')
 
     # Calculate the average price for the day in EUR
     if conversion_rate_dkk_to_eur:
         avg_price_eur = prices_df['SpotPriceEUR'].mean()
-        print(f'The average price for the day is {avg_price_eur} EUR/MWh')
+
+        print("*** DAILY PRICE AVERAGE ***")
+        print(f'The average price for the day is {avg_price_eur} EUR/MWh\n')
 
     # Get the current hour and display the price.
     # DK1, DK2 and the average of the two prices are displayed.
@@ -220,13 +223,14 @@ if data:
         current_hour_price_avg_EUR = (current_hour_price_DK1_EUR + current_hour_price_DK2_EUR) / 2
 
         logging.info("Displaying current hour prices.")
+        print("*** CURRENT HOUR PRICE POINT ***")
         print(
             f'The price for the current hour ({current_hour}) is {current_hour_price_DK1_EUR} EUR/MWh for DK1 and '
-            f'{current_hour_price_DK2_EUR} EUR/MWh for DK2. '
-            f'The average of the two PriceAreas is {current_hour_price_avg_EUR} EUR/MWh')
+            f'{current_hour_price_DK2_EUR} EUR/MWh for DK2. \n'
+            f'The average of the two PriceAreas is {current_hour_price_avg_EUR} EUR/MWh\n')
 
     # Sort prices from low to high if prompted by user
-    sort = input("Sort prices from low to high? (y/n): ")
+    sort = input("*** SORTING PROMPT ***\nSort prices from low to high? (y/n): ")
     if sort == 'y':
         logging.info(f"User chose to sort: {sort}")
         prices_df = prices_df.sort_values(by=['SpotPriceEUR'])
@@ -249,6 +253,8 @@ if data:
 
     # Calculate x and y percentiles
     logging.info("Calculating x and y percentiles.")
+    print('\nCalculating percentiles...')
+
     if x:
         try:
             x = float(x)
@@ -257,7 +263,7 @@ if data:
             # Handling of invalid input for x
             if 0 <= x <= 1:
                 x_max_percentile = prices_df['SpotPriceEUR'].quantile(1 - x)
-                print('The ' + str(x * 100) + 'th maximum percentile is ' + str(x_max_percentile) + ' EUR/MWh')
+                print('\nThe ' + str(x * 100) + 'th maximum percentile is ' + str(x_max_percentile) + ' EUR/MWh')
 
                 # Append x_max_percentile to percentiles_df
                 df_x = pd.DataFrame([{'Percentile': f'{x * 100}th Max', 'SpotPriceEUR': x_max_percentile}],
