@@ -6,6 +6,11 @@ import uuid
 import time
 import json
 
+# List of authorized MAC addresses. Add your own MAC address to the list to run the program.
+AUTHORIZED_IDS = ['MAC_ADDRESS_1', 'MAC_ADDRESS_2']
+# API key for the exchange rate API. Get your own API key from https://www.exchangerate-api.com/
+api_key = "API_KEY"
+
 
 # Get the MAC address of the current device to check if the user is authorized to run the program
 def get_mac_address():
@@ -13,15 +18,29 @@ def get_mac_address():
     return ":".join([mac[e:e + 2] for e in range(0, 11, 2)])
 
 
-# Check if the user is authorized
-AUTHORIZED_IDS = ['MAC_ADDRESS_1', 'MAC_ADDRESS_2']
-
+# MAC address of the current device
 current_id = get_mac_address()
 
 # If the current_id is not in AUTHORIZED_IDS, exit the program
 if current_id not in AUTHORIZED_IDS:
     print("Apologies. You are not currently authorized to run this program.")
     exit(1)
+
+
+# Function to validate the API key for the exchange rate API. Returns True if valid, False otherwise.
+def validate_exchange_rate_api_key(api_key):
+    try:
+        response = requests.get(f"https://api.exchangerate-api.com/v4/latest/USD")
+        if response.status_code == 401:
+            print("Invalid API key for the exchange rate API.")
+            return False
+        elif response.status_code != 200:
+            print("Unable to validate API key for the exchange rate API.")
+            return False
+        return True
+    except requests.RequestException as e:
+        print(f"An error occurred while validating the API key: {e}")
+        return False
 
 
 # Function to fetch current exchange rate from DKK to EUR from ExchangeRate-API. Returns None if unsuccessful.
@@ -46,9 +65,12 @@ def fetch_exchange_rate(api_key, max_retries=3):
     return None
 
 
-# Fetch the current exchange rate from DKK to EUR
-api_key = "API_KEY"
-conversion_rate_dkk_to_eur = fetch_exchange_rate(api_key)
+# Fetch the exchange rate if the API key is valid
+if validate_exchange_rate_api_key(api_key):
+    conversion_rate_dkk_to_eur = fetch_exchange_rate(api_key)
+else:
+    print("Exiting due to invalid API key.")
+    exit(1)
 
 # Load the last specified percentiles
 try:
