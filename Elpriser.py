@@ -101,7 +101,6 @@ except pickle.UnpicklingError:
     x_last, y_last = None, None
 
 
-
 # Function to fetch electricity prices from EnergiDataService. Returns None if unsuccessful. Retries max_retries times.
 def fetch_electricity_prices(max_retries=3):
     response = None  # Initialize response to None
