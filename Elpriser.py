@@ -199,7 +199,7 @@ if data:
     # Sort prices from low to high if prompted by user
     sort = input("Sort prices from low to high? (y/n): ")
     if sort == 'y':
-        logging.info("Sorting prices from low to high.")
+        logging.info(f"User chose to sort: {sort}")
         prices_df = prices_df.sort_values(by=['SpotPriceEUR'])
 
     # Ask user for x and y percentiles
@@ -223,6 +223,7 @@ if data:
     if x:
         try:
             x = float(x)
+            logging.info(f"User entered x percentile: {x}")
 
             # Handling of invalid input for x
             if 0 <= x <= 1:
@@ -242,6 +243,7 @@ if data:
     if y:
         try:
             y = float(y)
+            logging.info(f"User entered y percentile: {y}")
 
             # Handling of invalid input for y
             if 0 <= y <= 1:
@@ -277,6 +279,8 @@ if data:
             percentiles_df.to_excel(writer, sheet_name='Percentiles', index=False)
     except Exception as e:
         logging.error(f"Error while exporting dataframes to Excel: {e}")
+
+    logging.info("Program completed successfully.")
 
     # If response is not OK, print error message
 else:
