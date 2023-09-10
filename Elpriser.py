@@ -88,6 +88,7 @@ else:
 try:
     with open('percentiles_cache.pkl', 'rb') as f:
         x_last, y_last = pickle.load(f)
+        logging.info("Successfully read from cache.")
         # Error handling for invalid values.
 except FileNotFoundError:
     logging.warning("Warning: Cache file not found. Using default values.")
@@ -98,6 +99,7 @@ except PermissionError:
 except pickle.UnpicklingError:
     logging.error("Error while reading the cache file. Using default values.")
     x_last, y_last = None, None
+
 
 
 # Function to fetch electricity prices from EnergiDataService. Returns None if unsuccessful. Retries max_retries times.
