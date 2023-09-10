@@ -5,11 +5,17 @@ import pickle
 import uuid
 import time
 import json
+import logging
+
+# Logging configuration
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # List of authorized MAC addresses. Add your own MAC address to the list to run the program.
 AUTHORIZED_IDS = ['MAC_ADDRESS_1', 'MAC_ADDRESS_2']
 # API key for the exchange rate API. Get your own API key from https://www.exchangerate-api.com/
 api_key = "API_KEY"
+
+logging.info("Program started.")
 
 
 # Get the MAC address of the current device to check if the user is authorized to run the program
