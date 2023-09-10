@@ -2,6 +2,22 @@ import requests
 import pandas as pd
 from datetime import datetime as dt
 import pickle
+import uuid
+
+
+def get_mac_address():
+    mac = uuid.UUID(int=uuid.getnode()).hex[-12:]
+    return ":".join([mac[e:e + 2] for e in range(0, 11, 2)])
+
+
+# Check if the user is authorized to run the program
+AUTHORIZED_IDS = ['MAC_ADDRESS_1', 'MAC_ADDRESS_2']
+
+current_id = get_mac_address()
+
+if current_id not in AUTHORIZED_IDS:
+    print("Apologies. You are not currently authorized to run this program.")
+    exit(1)
 
 
 # Function to fetch current exchange rate from DKK to EUR from ExchangeRate-API
@@ -72,10 +88,12 @@ if response.status_code == 200:
     current_hour = dt.now().hour
     current_hour_prices = prices_df[prices_df['HourDK'].str.contains(f'T{current_hour:02d}:')]
 
-# Calculate the average price for the current hour in EUR
+    # Calculate the average price for the current hour in EUR
     if conversion_rate_dkk_to_eur:
-        current_hour_price_DK1_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK1']['SpotPriceEUR'].values[0]
-        current_hour_price_DK2_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK2']['SpotPriceEUR'].values[0]
+        current_hour_price_DK1_EUR = \
+            current_hour_prices[current_hour_prices['PriceArea'] == 'DK1']['SpotPriceEUR'].values[0]
+        current_hour_price_DK2_EUR = \
+            current_hour_prices[current_hour_prices['PriceArea'] == 'DK2']['SpotPriceEUR'].values[0]
         current_hour_price_avg_EUR = (current_hour_price_DK1_EUR + current_hour_price_DK2_EUR) / 2
 
         print(
