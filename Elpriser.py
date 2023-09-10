@@ -29,8 +29,11 @@ current_id = get_mac_address()
 
 # If the current_id is not in AUTHORIZED_IDS, exit the program
 if current_id not in AUTHORIZED_IDS:
+    logging.warning(f"Unauthorized access attempt by MAC address: {current_id}")
     print("Apologies. You are not currently authorized to run this program.")
     exit(1)
+
+logging.info(f"Authorized access by MAC address: {current_id}")
 
 
 # Function to validate the API key for the exchange rate API. Returns True if valid, False otherwise.
@@ -38,14 +41,15 @@ def validate_exchange_rate_api_key(api_key):
     try:
         response = requests.get(f"https://api.exchangerate-api.com/v4/latest/USD")
         if response.status_code == 401:
-            print("Invalid API key for the exchange rate API.")
+            logging.error("Invalid API key for the exchange rate API.")
             return False
         elif response.status_code != 200:
-            print("Unable to validate API key for the exchange rate API.")
+            logging.warning("Unable to validate API key for the exchange rate API.")
             return False
+        logging.info("Successfully validated the exchange rate API key.")
         return True
     except requests.RequestException as e:
-        print(f"An error occurred while validating the API key: {e}")
+        logging.error(f"An error occurred while validating the API key: {e}")
         return False
 
 
@@ -56,18 +60,20 @@ def fetch_exchange_rate(api_key, max_retries=3):
         status_code = response.status_code
 
         if status_code == 200:
+            logging.info("Successfully fetched exchange rate.")
             return response.json()['rates']['EUR']
         elif status_code == 401:  # Unauthorized
-            print("Unauthorized access to the exchange rate API. Check your API key.")
+            logging.error("Unauthorized access to the exchange rate API. Check your API key.")
             break
         elif status_code == 429:  # Too Many Requests
-            print("Rate limit exceeded for the exchange rate API.")
+            logging.warning("Rate limit exceeded for the exchange rate API.")
             time.sleep(60)  # Wait for 60 seconds before the next attempt
         else:
-            print(f"Failed to fetch exchange rate. Attempt {attempt + 1}. Status code: {status_code}. Retrying...")
+            logging.warning(f"Failed to fetch exchange rate. Attempt {attempt + 1}. Status code: {status_code}. "
+                            f"Retrying...")
             time.sleep(2 ** attempt)
 
-    print(f"Failed to fetch exchange rate after {max_retries} attempts.")
+    logging.info(f"Failed to fetch exchange rate after {max_retries} attempts.")
     return None
 
 
@@ -75,7 +81,7 @@ def fetch_exchange_rate(api_key, max_retries=3):
 if validate_exchange_rate_api_key(api_key):
     conversion_rate_dkk_to_eur = fetch_exchange_rate(api_key)
 else:
-    print("Exiting due to invalid API key.")
+    logging.error("Exiting due to invalid API key.")
     exit(1)
 
 # Load the last specified percentiles
@@ -84,13 +90,13 @@ try:
         x_last, y_last = pickle.load(f)
         # Error handling for invalid values.
 except FileNotFoundError:
-    print("Warning: Cache file not found. Using default values.")
+    logging.warning("Warning: Cache file not found. Using default values.")
     x_last, y_last = None, None
 except PermissionError:
-    print("Warning: Permission denied while accessing the cache file. Using default values.")
+    logging.warning("Warning: Permission denied while accessing the cache file. Using default values.")
     x_last, y_last = None, None
 except pickle.UnpicklingError:
-    print("Warning: Error while reading the cache file. Using default values.")
+    logging.error("Error while reading the cache file. Using default values.")
     x_last, y_last = None, None
 
 
@@ -107,24 +113,25 @@ def fetch_electricity_prices(max_retries=3):
 
             if status_code == 200:
                 try:
+                    logging.info("Successfully fetched electricity prices.")
                     return response.json(), status_code
                 except json.JSONDecodeError:
-                    print("Error: Failed to decode JSON response.")
+                    logging.error("Error while parsing JSON response.")
                     break
             elif status_code == 401:  # Unauthorized
-                print("Unauthorized access to the electricity prices API.")
+                logging.error("Unauthorized access to the electricity prices API.")
                 break
             elif status_code == 429:  # Too Many Requests
-                print("Rate limit exceeded for the electricity prices API.")
+                logging.warning("Rate limit exceeded for the electricity prices API.")
                 time.sleep(60)  # Wait for 60 seconds before the next attempt
             else:
-                print(
+                logging.warning(
                     f"Failed to fetch electricity prices. Attempt {attempt + 1}. Status code: {status_code}. Retrying...")
                 time.sleep(2 ** attempt)
         except requests.RequestException as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
 
-    print(f"Failed to fetch electricity prices after {max_retries} attempts.")
+    logging.error(f"Failed to fetch electricity prices after {max_retries} attempts.")
     return None, status_code if response else 'N/A'
 
 
@@ -134,19 +141,20 @@ data, status_code = fetch_electricity_prices()
 # If response is OK, continue
 if data:
     try:
+        logging.info("Successfully fetched electricity prices.")
         # Extract data from JSON
         records = [record for record in data['records'] if record['PriceArea'] in ['DK1', 'DK2']]
-
         # Create a dataframe from the records
         prices_df = pd.DataFrame(records)
         # Keep only the columns we need
         prices_df = prices_df[['HourDK', 'PriceArea', 'SpotPriceDKK']]
     except (ValueError, TypeError) as e:
-        print(f"Error while parsing data into DataFrame: {e}")
+        logging.error(f"Error while parsing data into DataFrame: {e}")
         exit(1)
 
     # Convert SpotPriceDKK to EUR if conversion rate is available
     if conversion_rate_dkk_to_eur:
+        logging.info("Converting prices from DKK to EUR.")
         prices_df['SpotPriceEUR'] = prices_df['SpotPriceDKK'] * conversion_rate_dkk_to_eur
 
     # Create a new column with Extrema (min or max).
@@ -175,12 +183,14 @@ if data:
 
     # Calculate the average price for the current hour in EUR
     if conversion_rate_dkk_to_eur:
+        logging.info("Calculating average price for the current hour.")
         current_hour_price_DK1_EUR = \
             current_hour_prices[current_hour_prices['PriceArea'] == 'DK1']['SpotPriceEUR'].values[0]
         current_hour_price_DK2_EUR = \
             current_hour_prices[current_hour_prices['PriceArea'] == 'DK2']['SpotPriceEUR'].values[0]
         current_hour_price_avg_EUR = (current_hour_price_DK1_EUR + current_hour_price_DK2_EUR) / 2
 
+        logging.info("Displaying current hour prices.")
         print(
             f'The price for the current hour ({current_hour}) is {current_hour_price_DK1_EUR} EUR/MWh for DK1 and '
             f'{current_hour_price_DK2_EUR} EUR/MWh for DK2. '
@@ -189,9 +199,11 @@ if data:
     # Sort prices from low to high if prompted by user
     sort = input("Sort prices from low to high? (y/n): ")
     if sort == 'y':
+        logging.info("Sorting prices from low to high.")
         prices_df = prices_df.sort_values(by=['SpotPriceEUR'])
 
     # Ask user for x and y percentiles
+    logging.info("Asking user for x and y percentiles.")
     x = input(f"Enter the xth maximum percentile (e.g., 0.66 for 66%), or press ENTER to use last value ({x_last}): ")
     y = input(f"Enter the yth minimum percentile (e.g., 0.33 for 33%), or press ENTER to use last value ({y_last}): ")
 
@@ -202,9 +214,12 @@ if data:
         y = y_last
 
     # Create a DataFrame for percentiles
+
+    logging.info("Creating DataFrame for percentiles.")
     percentiles_df = pd.DataFrame(columns=['Percentile', 'SpotPriceEUR'])
 
     # Calculate x and y percentiles
+    logging.info("Calculating x and y percentiles.")
     if x:
         try:
             x = float(x)
@@ -222,7 +237,7 @@ if data:
             else:
                 print("Error: x should be a number between 0 and 1")
         except ValueError:
-            print("Error: Invalid input for x")
+            logging.error("Error: Invalid input for x")
 
     if y:
         try:
@@ -241,26 +256,28 @@ if data:
             else:
                 print("Error: y should be a number between 0 and 1")
         except ValueError:
-            print("Error: Invalid input for y")
+            logging.error("Error: Invalid input for y")
 
     # Save the specified percentiles to a pickle (pkl) file for caching purposes in case of system failure
     try:
+        logging.info("Saving percentiles to cache file.")
         with open('percentiles_cache.pkl', 'wb') as f:
             pickle.dump((x, y), f)
             # Error handling for invalid values.
     except PermissionError:
-        print("Warning: Permission denied while writing to the cache file.")
+        logging.warning("Warning: Permission denied while writing to the cache file.")
     except pickle.PicklingError:
-        print("Warning: Error while writing to the cache file.")
+        logging.error("Warning: Error while writing to the cache file.")
 
     # Export dataframes to Excel
     try:
+        logging.info("Exporting dataframes to Excel.")
         with pd.ExcelWriter('Elpriser.xlsx') as writer:
             prices_df.to_excel(writer, sheet_name='Prices', index=False)
             percentiles_df.to_excel(writer, sheet_name='Percentiles', index=False)
     except Exception as e:
-        print(f"Failed to write to Excel: {e}")
+        logging.error(f"Error while exporting dataframes to Excel: {e}")
 
     # If response is not OK, print error message
 else:
-    print('Error: ' + str(status_code))
+    logging.error('Error: ' + str(status_code))
