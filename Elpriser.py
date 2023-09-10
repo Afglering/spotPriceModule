@@ -17,7 +17,7 @@ def fetch_exchange_rate(api_key):
 
 
 # Fetch the current exchange rate from DKK to EUR
-api_key = "API_KEY"
+api_key = "c26cf82c420f4ffee62965e1"
 conversion_rate_dkk_to_eur = fetch_exchange_rate(api_key)
 
 # Load the last specified percentiles
