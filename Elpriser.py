@@ -54,6 +54,13 @@ try:
     with open('percentiles_cache.pkl', 'rb') as f:
         x_last, y_last = pickle.load(f)
 except FileNotFoundError:
+    print("Warning: Cache file not found. Using default values.")
+    x_last, y_last = None, None
+except PermissionError:
+    print("Warning: Permission denied while accessing the cache file. Using default values.")
+    x_last, y_last = None, None
+except pickle.UnpicklingError:
+    print("Warning: Error while reading the cache file. Using default values.")
     x_last, y_last = None, None
 
 
@@ -200,8 +207,13 @@ if data:
             print("Error: Invalid input for y")
 
     # Save the specified percentiles to a pickle (pkl) file for caching purposes in case of system failure
-    with open('percentiles_cache.pkl', 'wb') as f:
-        pickle.dump((x, y), f)
+    try:
+        with open('percentiles_cache.pkl', 'wb') as f:
+            pickle.dump((x, y), f)
+    except PermissionError:
+        print("Warning: Permission denied while writing to the cache file.")
+    except pickle.PicklingError:
+        print("Warning: Error while writing to the cache file.")
 
     # Export dataframes to Excel
     with pd.ExcelWriter('Elpriser.xlsx') as writer:
