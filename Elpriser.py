@@ -25,18 +25,21 @@ if current_id not in AUTHORIZED_IDS:
 
 # Function to fetch current exchange rate from DKK to EUR from ExchangeRate-API. Returns None if unsuccessful.
 def fetch_exchange_rate(api_key, max_retries=3):
-    # Try max_retries times to fetch the exchange rate.
     for attempt in range(max_retries):
-        url = f"https://api.exchangerate-api.com/v4/latest/DKK"
-        response = requests.get(url)
+        response = requests.get(f"https://api.exchangerate-api.com/v4/latest/DKK")
+        status_code = response.status_code
 
-        if response.status_code == 200:
-            data = response.json()
-            return data['rates']['EUR']
-
-        # If unsuccessful, print error message and wait 2^attempt seconds before retrying.
-        print(f"Failed to fetch exchange rate. Attempt {attempt + 1}. Status code: {response.status_code}. Retrying...")
-        time.sleep(2 ** attempt)
+        if status_code == 200:
+            return response.json()['rates']['EUR']
+        elif status_code == 401:  # Unauthorized
+            print("Unauthorized access to the exchange rate API. Check your API key.")
+            break
+        elif status_code == 429:  # Too Many Requests
+            print("Rate limit exceeded for the exchange rate API.")
+            time.sleep(60)  # Wait for 60 seconds before the next attempt
+        else:
+            print(f"Failed to fetch exchange rate. Attempt {attempt + 1}. Status code: {status_code}. Retrying...")
+            time.sleep(2 ** attempt)
 
     print(f"Failed to fetch exchange rate after {max_retries} attempts.")
     return None
@@ -57,21 +60,31 @@ except FileNotFoundError:
 # Function to fetch electricity prices from EnergiDataService. Returns None if unsuccessful. Retries max_retries times.
 def fetch_electricity_prices(max_retries=3):
     response = None  # Initialize response to None
+    status_code = 'N/A'  # Initialize status_code to 'N/A'
     for attempt in range(max_retries):
         try:
-            response = requests.get('https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&filter'
-                                    '=%20%7B' + '%22PriceArea%22%3A%20%22DK1%2CDK2%22%7D')
-            if response.status_code == 200:
-                return response.json(), response.status_code
+            response = requests.get(
+                'https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&filter=%20%7B' +
+                '%22PriceArea%22%3A%20%22DK1%2CDK2%22%7D')
+            status_code = response.status_code
+
+            if status_code == 200:
+                return response.json(), status_code
+            elif status_code == 401:  # Unauthorized
+                print("Unauthorized access to the electricity prices API.")
+                break
+            elif status_code == 429:  # Too Many Requests
+                print("Rate limit exceeded for the electricity prices API.")
+                time.sleep(60)  # Wait for 60 seconds before the next attempt
+            else:
+                print(
+                    f"Failed to fetch electricity prices. Attempt {attempt + 1}. Status code: {status_code}. Retrying...")
+                time.sleep(2 ** attempt)
         except requests.RequestException as e:
             print(f"An error occurred: {e}")
 
-        print(
-            f"Failed to fetch electricity prices. Attempt {attempt + 1}. Status code: {response.status_code if response else 'N/A'}. Retrying...")
-        time.sleep(2 ** attempt)
-
     print(f"Failed to fetch electricity prices after {max_retries} attempts.")
-    return None, response.status_code if response else 'N/A'
+    return None, status_code if response else 'N/A'
 
 
 # Fetch the data
