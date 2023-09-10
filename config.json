@@ -1,0 +1,8 @@
+{
+  "AUTHORIZED_IDS": ["MAC_ADDRESS"],
+  "API_KEY": "API_KEY",
+  "MAX_RETRIES": 3,
+  "TIMEOUT": 10,
+  "EXCHANGE_RATE_API_URL": "https://api.exchangerate-api.com/v4/latest/DKK",
+  "ELECTRICITY_PRICES_API_URL": "https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&filter=%20%7B%22PriceArea%22%3A%20%22DK1%2CDK2%22%7D"
+}

@@ -10,12 +10,29 @@ import logging
 # Logging configuration
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# List of authorized MAC addresses. Add your own MAC address to the list to run the program.
-AUTHORIZED_IDS = ['MAC_ADDRESS_1', 'MAC_ADDRESS_2']
-# API key for the exchange rate API. Get your own API key from https://www.exchangerate-api.com/
-api_key = "API_KEY"
-
 logging.info("Program started.")
+
+# Read config.json file for API key and other configuration parameters
+logging.info("Reading config.json file.")
+
+try:
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+except FileNotFoundError:
+    logging.error("Configuration file not found.")
+    exit(1)
+except json.JSONDecodeError:
+    logging.error("Error decoding the configuration file.")
+    exit(1)
+
+AUTHORIZED_IDS = config['AUTHORIZED_IDS']
+api_key = config['API_KEY']
+max_retries = config['MAX_RETRIES']
+timeout = config['TIMEOUT']
+exchange_rate_api_url = config['EXCHANGE_RATE_API_URL']
+electricity_prices_api_url = config['ELECTRICITY_PRICES_API_URL']
+
+logging.info("Successfully read config.json file.")
 
 
 # Get the MAC address of the current device to check if the user is authorized to run the program
@@ -39,7 +56,7 @@ logging.info(f"Authorized access by MAC address: {current_id}")
 # Function to validate the API key for the exchange rate API. Returns True if valid, False otherwise.
 def validate_exchange_rate_api_key(api_key):
     try:
-        response = requests.get(f"https://api.exchangerate-api.com/v4/latest/USD")
+        response = requests.get(exchange_rate_api_url)
         if response.status_code == 401:
             logging.error("Invalid API key for the exchange rate API.")
             return False
@@ -56,7 +73,7 @@ def validate_exchange_rate_api_key(api_key):
 # Function to fetch current exchange rate from DKK to EUR from ExchangeRate-API. Returns None if unsuccessful.
 def fetch_exchange_rate(api_key, max_retries=3):
     for attempt in range(max_retries):
-        response = requests.get(f"https://api.exchangerate-api.com/v4/latest/DKK")
+        response = requests.get(exchange_rate_api_url)
         status_code = response.status_code
 
         if status_code == 200:
@@ -107,9 +124,7 @@ def fetch_electricity_prices(max_retries=3):
     status_code = 'N/A'  # Initialize status_code to 'N/A'
     for attempt in range(max_retries):
         try:
-            response = requests.get(
-                'https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&filter=%20%7B' +
-                '%22PriceArea%22%3A%20%22DK1%2CDK2%22%7D')
+            response = requests.get(electricity_prices_api_url)
             status_code = response.status_code
 
             if status_code == 200:
