@@ -316,7 +316,11 @@ if data:
         logging.error(f"Error while exporting dataframes to Excel: {e}")
 
     logging.info("Program completed successfully.")
+    print("Program completed successfully. This window will close in 5 seconds.")
+    time.sleep(5)  # Pauses the program for 5 seconds
 
-    # If response is not OK, print error message
+# If response is not OK, print error message
 else:
     logging.error('Error: ' + str(status_code))
+    print("An error occurred. This window will close in 5 seconds.")
+    time.sleep(5)  # Pauses the program for 5 seconds
