@@ -17,6 +17,7 @@ AUTHORIZED_IDS = ['MAC_ADDRESS_1', 'MAC_ADDRESS_2']
 
 current_id = get_mac_address()
 
+# If the current_id is not in AUTHORIZED_IDS, exit the program
 if current_id not in AUTHORIZED_IDS:
     print("Apologies. You are not currently authorized to run this program.")
     exit(1)
@@ -33,6 +34,7 @@ def fetch_exchange_rate(api_key, max_retries=3):
             data = response.json()
             return data['rates']['EUR']
 
+        # If unsuccessful, print error message and wait 2^attempt seconds before retrying.
         print(f"Failed to fetch exchange rate. Attempt {attempt + 1}. Status code: {response.status_code}. Retrying...")
         time.sleep(2 ** attempt)
 
