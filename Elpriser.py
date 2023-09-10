@@ -4,6 +4,7 @@ from datetime import datetime as dt
 import pickle
 import uuid
 import time
+import json
 
 
 # Get the MAC address of the current device to check if the user is authorized to run the program
@@ -77,7 +78,11 @@ def fetch_electricity_prices(max_retries=3):
             status_code = response.status_code
 
             if status_code == 200:
-                return response.json(), status_code
+                try:
+                    return response.json(), status_code
+                except json.JSONDecodeError:
+                    print("Error: Failed to decode JSON response.")
+                    break
             elif status_code == 401:  # Unauthorized
                 print("Unauthorized access to the electricity prices API.")
                 break
@@ -100,14 +105,17 @@ data, status_code = fetch_electricity_prices()
 
 # If response is OK, continue
 if data:
+    try:
+        # Extract data from JSON
+        records = [record for record in data['records'] if record['PriceArea'] in ['DK1', 'DK2']]
 
-    # Extract data from JSON
-    records = [record for record in data['records'] if record['PriceArea'] in ['DK1', 'DK2']]
-
-    # Create a dataframe from the records
-    prices_df = pd.DataFrame(records)
-    # Keep only the columns we need
-    prices_df = prices_df[['HourDK', 'PriceArea', 'SpotPriceDKK']]
+        # Create a dataframe from the records
+        prices_df = pd.DataFrame(records)
+        # Keep only the columns we need
+        prices_df = prices_df[['HourDK', 'PriceArea', 'SpotPriceDKK']]
+    except (ValueError, TypeError) as e:
+        print(f"Error while parsing data into DataFrame: {e}")
+        exit(1)
 
     # Convert SpotPriceDKK to EUR if conversion rate is available
     if conversion_rate_dkk_to_eur:
@@ -218,9 +226,12 @@ if data:
         print("Warning: Error while writing to the cache file.")
 
     # Export dataframes to Excel
-    with pd.ExcelWriter('Elpriser.xlsx') as writer:
-        prices_df.to_excel(writer, sheet_name='Prices', index=False)
-        percentiles_df.to_excel(writer, sheet_name='Percentiles', index=False)
+    try:
+        with pd.ExcelWriter('Elpriser.xlsx') as writer:
+            prices_df.to_excel(writer, sheet_name='Prices', index=False)
+            percentiles_df.to_excel(writer, sheet_name='Percentiles', index=False)
+    except Exception as e:
+        print(f"Failed to write to Excel: {e}")
 
     # If response is not OK, print error message
 else:
