@@ -53,6 +53,7 @@ conversion_rate_dkk_to_eur = fetch_exchange_rate(api_key)
 try:
     with open('percentiles_cache.pkl', 'rb') as f:
         x_last, y_last = pickle.load(f)
+        # Error handling for invalid values.
 except FileNotFoundError:
     print("Warning: Cache file not found. Using default values.")
     x_last, y_last = None, None
@@ -210,6 +211,7 @@ if data:
     try:
         with open('percentiles_cache.pkl', 'wb') as f:
             pickle.dump((x, y), f)
+            # Error handling for invalid values.
     except PermissionError:
         print("Warning: Permission denied while writing to the cache file.")
     except pickle.PicklingError:
