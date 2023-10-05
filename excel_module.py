@@ -1,5 +1,4 @@
 # Purpose: Module to export dataframes to Excel
-
 import pandas as pd
 import logging
 

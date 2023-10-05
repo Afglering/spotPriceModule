@@ -1,5 +1,4 @@
 # Purpose: Setup logging for the application
-
 import logging
 
 
