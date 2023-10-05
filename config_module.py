@@ -1,4 +1,4 @@
-# config_module.py
+# Purpose: Setup logging for the application and read the config file.
 import json
 
 

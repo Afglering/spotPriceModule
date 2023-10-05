@@ -1,9 +1,10 @@
-# excel_module.py
+# Purpose: Module to export dataframes to Excel
 
 import pandas as pd
 import logging
 
 
+# Export dataframes to Excel
 def export_to_excel(prices_df, percentiles_df):
     try:
         with pd.ExcelWriter('SpotPrices.xlsx') as writer:

@@ -88,7 +88,7 @@ if data:
     # Save the specified percentiles to a cache file
     save_percentiles_to_cache(x, y)
 
-    # Write data to PLC
+    # Write data to PLC registers 40001-40007
     data_to_write = {
         40001: price_diff_eur,
         40002: avg_price_eur,
@@ -112,7 +112,7 @@ if data:
     print("\nProgram completed successfully. This window will close in 5 seconds.")
     time.sleep(5)
 
-# If response is not OK, print error message
+    # If response is not OK, print error message
 else:
     logging.error('Error: ' + str(status_code))
     print("An error occurred. This window will close in 5 seconds.")

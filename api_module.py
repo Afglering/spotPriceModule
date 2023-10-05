@@ -1,11 +1,11 @@
-# api_module.py
-
+# Purpose: This module contains functions for communicating with the API
 import requests
 import logging
 import time
 import json
 
 
+# Validate the API key for the exchange rate API
 def validate_exchange_rate_api_key(api_key, exchange_rate_api_url):
     try:
         response = requests.get(exchange_rate_api_url)
@@ -22,6 +22,7 @@ def validate_exchange_rate_api_key(api_key, exchange_rate_api_url):
         return False
 
 
+# Fetch the exchange rate from the API
 def fetch_exchange_rate(api_key, exchange_rate_api_url, max_retries=3):
     for attempt in range(max_retries):
         response = requests.get(exchange_rate_api_url)
@@ -45,6 +46,7 @@ def fetch_exchange_rate(api_key, exchange_rate_api_url, max_retries=3):
     return None
 
 
+# Fetch the electricity prices from the API
 def fetch_electricity_prices(electricity_prices_api_url, max_retries=3):
     response = None  # Initialize response to None
     status_code = 'N/A'  # Initialize status_code to 'N/A'
