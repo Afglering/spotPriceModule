@@ -12,10 +12,10 @@ def setup_plc_client(SERIAL_PORT, BAUD_RATE, PARITY, STOP_BITS, BYTE_SIZE):
 
 
 # Write data to plc
-def write_data_to_plc(client, register_address, value):
+def write_data_to_plc(client, register_address, value, scaling_factor, slave_id=1):  # Default slave_id is 1
     try:
-        scaled_value = int(value * 10)
-        response = client.write_register(register_address, scaled_value, unit=1)  # unit=1 is the slave id
+        scaled_value = int(value * scaling_factor)
+        response = client.write_register(register_address, scaled_value, unit=slave_id)
         if not response.isError():
             logging.info(f"Successfully wrote value {value} to register address {register_address}.")
         else:

@@ -9,5 +9,7 @@
   "BAUD_RATE": "9600",
   "PARITY": "N",
   "STOP_BITS": "1",
-  "BYTE_SIZE": "8"
+  "BYTE_SIZE": "8",
+  "SCALING_FACTOR": "10",
+  "SLAVE_ID": "1"
 }

@@ -100,7 +100,7 @@ if data:
     }
 
     for address, value in data_to_write.items():
-        write_data_to_plc(client, address, value)
+        write_data_to_plc(client, address, value, scaling_factor, slave_id)
 
     # Close the connection to the PLC
     client.close()
