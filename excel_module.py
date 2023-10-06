@@ -1,6 +1,7 @@
 # Purpose: Module to export dataframes to Excel
-import pandas as pd
 import logging
+
+import pandas as pd
 
 
 # Export dataframes to Excel

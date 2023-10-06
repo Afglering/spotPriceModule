@@ -1,8 +1,9 @@
 # Purpose: This module contains functions for communicating with the API
-import requests
+import json
 import logging
 import time
-import json
+
+import requests
 
 
 # Validate the API key for the exchange rate API

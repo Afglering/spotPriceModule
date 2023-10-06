@@ -1,10 +1,9 @@
-from config_module import *
 from api_module import *
-from logging_module import setup_logging
-from plc_module import *
+from config_module import *
 from data_processing_module import *
 from excel_module import *
-import time
+from logging_module import setup_logging
+from plc_module import *
 
 # Initializing variables
 current_hour_price_DK1_EUR = None
@@ -46,7 +45,8 @@ while True:
             break  # Exit the loop if the connection is successful
         else:
             logging.error("Failed to connect to the PLC.")
-            choice = input("Failed to connect to the PLC. \nDo you want to (r)etry, (m)ove on, or (e)xit? ").strip().lower()
+            choice = input("Failed to connect to the PLC. "
+                           "\nDo you want to (r)etry, (m)ove on, or (e)xit? ").strip().lower()
 
             if choice == 'r':
                 continue  # Retry the connection
@@ -98,7 +98,6 @@ if data:
     # Calculate percentiles
     x = input(f"Enter the xth maximum percentile (e.g., 0.66 for 66%), or press ENTER to use last value ({x_last}): ")
     y = input(f"Enter the yth minimum percentile (e.g., 0.33 for 33%), or press ENTER to use last value ({y_last}):\n")
-
 
     # Use last values if user presses ENTER
     if not x:

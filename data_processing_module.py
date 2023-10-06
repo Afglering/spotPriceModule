@@ -1,9 +1,10 @@
 # Purpose: This module contains functions for processing the data from the API and calculating the statistics.
-import pickle
-from datetime import datetime as dt
-import pandas as pd
 import logging
+import pickle
 import uuid
+from datetime import datetime as dt
+
+import pandas as pd
 
 
 # Process the data from the API into a DataFrame and return it if successful
@@ -63,8 +64,10 @@ def calculate_daily_average(prices_df):
 def get_current_hour_prices(prices_df):
     current_hour = dt.now().hour
     current_hour_prices = prices_df[prices_df['HourDK'].str.contains(f'T{current_hour:02d}:')]
-    current_hour_price_DK1_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK1']['SpotPriceEUR'].values[0]
-    current_hour_price_DK2_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK2']['SpotPriceEUR'].values[0]
+    current_hour_price_DK1_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK1']['SpotPriceEUR'].values[
+        0]
+    current_hour_price_DK2_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK2']['SpotPriceEUR'].values[
+        0]
     current_hour_price_avg_EUR = (current_hour_price_DK1_EUR + current_hour_price_DK2_EUR) / 2
     return current_hour_price_DK1_EUR, current_hour_price_DK2_EUR, current_hour_price_avg_EUR
 

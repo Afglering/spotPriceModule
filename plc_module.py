@@ -1,6 +1,7 @@
 # Purpose: This module contains functions for communicating with the PLC.
-from pymodbus.client import ModbusSerialClient
 import logging
+
+from pymodbus.client import ModbusSerialClient
 
 
 # Setup plc modbus rtu client
