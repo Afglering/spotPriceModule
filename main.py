@@ -46,7 +46,7 @@ while True:
             break  # Exit the loop if the connection is successful
         else:
             logging.error("Failed to connect to the PLC.")
-            choice = input("Do you want to (r)etry, (m)ove on, or (e)xit? ").strip().lower()
+            choice = input("Failed to connect to the PLC. \nDo you want to (r)etry, (m)ove on, or (e)xit? ").strip().lower()
 
             if choice == 'r':
                 continue  # Retry the connection
