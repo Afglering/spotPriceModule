@@ -22,8 +22,11 @@ def process_data(data, conversion_rate_dkk_to_eur):
 
 
 # Calculate the percentiles and return a DataFrame
+# Modify the calculate_percentiles function to return the calculated percentiles
 def calculate_percentiles(prices_df, x, y):
     percentiles_df = pd.DataFrame(columns=['Percentile', 'SpotPriceEUR'])
+    x_max_percentile = None
+    y_min_percentile = None
 
     if x:
         try:
@@ -45,7 +48,7 @@ def calculate_percentiles(prices_df, x, y):
         except ValueError:
             logging.error("Error: Invalid input for y")
 
-    return percentiles_df
+    return percentiles_df, x_max_percentile, y_min_percentile
 
 
 # Calculate the price difference between the daily minimum and maximum in EUR

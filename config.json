@@ -1,6 +1,9 @@
 {
   "API_KEY": "c26cf82c420f4ffee62965e1",
-  "AUTHORIZED_IDS": ["3c:a0:67:e6:54:32", "00:0C:29:E9:58:11"],
+  "AUTHORIZED_IDS": [
+    "3c:a0:67:e6:54:32",
+    "00:0C:29:E9:58:11"
+  ],
   "MAX_RETRIES": 3,
   "TIMEOUT": 10,
   "EXCHANGE_RATE_API_URL": "https://api.exchangerate-api.com/v4/latest/DKK",

@@ -22,6 +22,8 @@ max_retries = config['MAX_RETRIES']
 timeout = config['TIMEOUT']
 exchange_rate_api_url = config['EXCHANGE_RATE_API_URL']
 electricity_prices_api_url = config['ELECTRICITY_PRICES_API_URL']
+
+# PLC config
 SERIAL_PORT = config['SERIAL_PORT']
 BAUD_RATE = config['BAUD_RATE']
 PARITY = config['PARITY']
