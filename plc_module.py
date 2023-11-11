@@ -1,45 +1,60 @@
-# Purpose: This module contains functions for communicating with the PLC.
+# Purpose: This module contains functions for communicating with the PLC over Modbus TCP.
 import logging
 
-from pymodbus.client import ModbusSerialClient
-from pymodbus.exceptions import ModbusException
+from pymodbus.client import ModbusTcpClient as ModbusClient
+from pymodbus.exceptions import ConnectionException, ModbusIOException
+
+# IP address for the Moxa MGate 5103 device
+MOXA_IP_ADDRESS = '192.168.127.254'
 
 
-# Setup plc modbus rtu client
-def setup_plc_client(SERIAL_PORT, BAUD_RATE, PARITY, STOP_BITS, BYTE_SIZE):
+# Setup plc modbus tcp client
+def setup_plc_client(IP_ADDRESS, PORT=502):
     try:
-        client = ModbusSerialClient(method='rtu', port=SERIAL_PORT, baudrate=BAUD_RATE, parity=PARITY,
-                                    stopbits=STOP_BITS, bytesize=BYTE_SIZE)
-        if client:
-            logging.info("PLC client setup successful.")
-        return client
+        client = ModbusClient(host=IP_ADDRESS, port=PORT)
+        if client.connect():
+            logging.info("PLC TCP client setup successful.")
+            print("PLC TCP client setup successful.")
+            return client
+        else:
+            logging.error("Failed to connect to PLC TCP client.")
+            return None
     except Exception as e:
-        logging.error(f"Error setting up PLC client: {e}")
+        logging.error(f"Error setting up PLC TCP client: {e}")
         return None
 
 
-# Write data to plc
-def write_data_to_plc(client, register_address, value, scaling_factor, slave_id=1):  # Default slave_id is 1
+# Write data to plc over Modbus TCP with enhanced diagnostics
+def write_data_to_plc(client, register_address, value, scaling_factor, unit_id=1):
     try:
-        # Try to establish a connection
-        if client.connect():
-            logging.info("Connected to the PLC.")
+        # Ensure the socket is open before attempting to write
+        if not client.is_socket_open():
+            client.connect()
 
-            # Proceed to write data
-            scaled_value = int(value * scaling_factor)
-            response = client.write_register(register_address, scaled_value, unit=slave_id)
+        logging.info("Connected to the PLC over TCP/IP.")
 
-            if response.isError():
-                logging.error(
-                    f"Failed to write value {value} to register address {register_address}. Error: {response}")
-            else:
-                logging.info(f"Successfully wrote value {value} to register address {register_address}.")
+        # Scale the value to an integer before writing to the register
+        scaled_value = int(value * scaling_factor)
 
-            # Close the connection
-            client.close()
+        # Write the scaled value to the specified register address
+        response = client.write_register(register_address, scaled_value, unit=unit_id)
+
+        # Check if the response indicates an error
+        if response.isError():
+            logging.error(f"Failed to write value {scaled_value} to register address {register_address}. Error: {response}")
+            return False
         else:
-            logging.error("Failed to connect to the PLC.")
-    except ModbusException as e:
-        logging.error(f"Modbus Error while writing to PLC: {e}")
+            logging.info(f"Successfully wrote value {scaled_value} to register address {register_address}.")
+            return True
+    except ModbusIOException as e:
+        logging.error(f"Modbus IO Error while writing to PLC: {e}")
+        return False
+    except ConnectionException as e:
+        logging.error(f"Connection Error while writing to PLC: {e}")
+        return False
     except Exception as e:
         logging.error(f"An unexpected error occurred while writing to PLC: {e}")
+        return False
+    finally:
+        # It's usually a good idea to close the client, but you may wish to manage the connection elsewhere
+        client.close()

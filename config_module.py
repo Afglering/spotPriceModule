@@ -24,10 +24,5 @@ exchange_rate_api_url = config['EXCHANGE_RATE_API_URL']
 electricity_prices_api_url = config['ELECTRICITY_PRICES_API_URL']
 
 # PLC config
-SERIAL_PORT = config['SERIAL_PORT']
-BAUD_RATE = config['BAUD_RATE']
-PARITY = config['PARITY']
-STOP_BITS = config['STOP_BITS']
-BYTE_SIZE = config['BYTE_SIZE']
 scaling_factor = config['SCALING_FACTOR']
-slave_id = config['SLAVE_ID']
+unit_id = config['UNIT_ID']

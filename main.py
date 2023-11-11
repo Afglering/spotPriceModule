@@ -6,6 +6,8 @@ from excel_module import *
 from logging_module import setup_logging
 from plc_module import *
 
+# ---------------------------------- Init ------------------------------------------------------
+
 # Initializing variables
 current_hour_price_DK1_EUR = None
 current_hour_price_DK2_EUR = None
@@ -18,8 +20,7 @@ plc_connected = False
 data_to_write = None
 client = None
 prices_df = None
-
-# ---------------------------------- Init ------------------------------------------------------
+MOXA_PORT = 502
 
 # Setup logging
 setup_logging()
@@ -104,58 +105,62 @@ def handle_plc_option():
     plc_connected = False
     client = None
 
-    while True:
-        connect_to_plc = input("Do you want to connect to the PLC? (y/n): ").strip().lower()
+    connect_to_plc = input("Do you want to connect to the PLC? (y/n): ").strip().lower()
 
-        if connect_to_plc == 'y':
-            client = setup_plc_client(SERIAL_PORT, BAUD_RATE, PARITY, STOP_BITS, BYTE_SIZE)
+    if connect_to_plc == 'y':
+        client = setup_plc_client(IP_ADDRESS=MOXA_IP_ADDRESS, PORT=MOXA_PORT)
 
-            if client.connect():
-                plc_connected = True
-                logging.info("Successfully connected to the PLC.")
+        # Check if the client has been successfully created
+        if client is not None:
+            try:
+                if client.connect():
+                    plc_connected = True
+                    logging.info("Successfully connected to the PLC.")
 
-                data_to_write = {
-                    40001: round(price_diff_eur, 2),
-                    40002: round(avg_price_eur, 2),
-                    40003: round(current_hour_price_DK1_EUR, 2),
-                    40004: round(current_hour_price_DK2_EUR, 2),
-                    40005: round(current_hour_price_avg_EUR, 2),
-                    40006: round(y_min_percentile, 2),
-                    40007: round(x_max_percentile, 2)
-                }
+                    data_to_write = {
+                        0: round(price_diff_eur, 2),  # Corresponds to 40001
+                        1: round(avg_price_eur, 2),   # Corresponds to 40002
+                        2: round(current_hour_price_DK1_EUR, 2),  # Corresponds to 40003
+                        3: round(current_hour_price_DK2_EUR, 2),  # Corresponds to 40004
+                        4: round(current_hour_price_avg_EUR, 2),  # Corresponds to 40005
+                        5: round(y_min_percentile, 2),  # Corresponds to 40006
+                        6: round(x_max_percentile, 2)   # Corresponds to 40007
+                    }
 
-                print("\n*** Register Data Preview ***")
-                for address, value in data_to_write.items():
-                    print(f"Register Address: {address}, Data to be written: {value}")
-
-                write_to_registers = input("Do you want to write the data to the registers? (y/n): ").strip().lower()
-                if write_to_registers == 'y':
+                    print("\n*** Register Data Preview ***")
                     for address, value in data_to_write.items():
-                        try:
-                            write_data_to_plc(client, address, value, scaling_factor, slave_id)
-                        except Exception as e:
-                            logging.error(f"Error writing to PLC: {e}")
-                            retry = input("An error occurred. Do you want to retry writing to this register? (y/n): ")
-                            if retry.lower() == 'y':
-                                continue  # Retry writing to the current register
+                        print(f"Register Address: {address}, Data to be written: {value}")
 
-                    client.close()
-                    logging.info("Successfully closed connection to the PLC.")
+                    write_to_registers = input("Do you want to write the data to the registers? (y/n): ").strip().lower()
+                    if write_to_registers == 'y':
+                        for address, value in data_to_write.items():
+                            write_data_to_plc(client, address, value, scaling_factor, unit_id)
+                    print("Successfully wrote to registers.")
+                    logging.info("Successfully wrote to registers.")
 
-                break  # Exit the loop after writing data or if user chooses not to write data
-
-            else:
-                logging.error("Failed to connect to the PLC.")
-                retry = input("Failed to connect to the PLC. Do you want to retry? (y/n): ").strip().lower()
-                if retry == 'y':
-                    continue  # Retry connecting to the PLC
                 else:
-                    break  # Exit the loop if user chooses not to retry
+                    logging.error("Failed to connect to the PLC.")
+                    raise Exception("Failed to connect to the PLC.")
+
+            except Exception as e:
+                logging.error(f"An error occurred: {e}")
+                retry = input("An error occurred. Do you want to retry? (y/n): ").strip().lower()
+                if retry.lower() == 'y':
+                    handle_plc_option()  # Attempt to reconnect
+                else:
+                    print("Exiting PLC connection attempt.")
+                    logging.info("Exiting PLC connection attempt.")
+
+            finally:
+                if client:  # Close the client if it's open
+                    client.close()
+                    logging.info("PLC connection closed.")
 
         else:
-            break  # Exit the loop if the user doesn't want to connect to the PLC
+            logging.error("PLC client could not be set up.")
+            print("PLC client setup failed.")
 
-    return plc_connected, client
+    return plc_connected
 
 
 def handle_excel_option(prices_df, percentiles_df):
@@ -199,7 +204,7 @@ while True:
     if user_choice == 'p':
         print("\nBefore continuing please enter the desired upper and lower percentile of the data\n")
         percentiles_df, x_max_percentile, y_min_percentile = percentile()
-        plc_connected, client = handle_plc_option()
+        plc_connected = handle_plc_option()
         logging.info("User chose to initiate plc connection.")
 
     elif user_choice == 'i':
@@ -215,9 +220,6 @@ while True:
     elif user_choice == 'q':
         confirm_exit = input("Are you sure you want to exit? (y/n): ").lower()
         if confirm_exit == 'y':
-            if plc_connected and client is not None:
-                client.close()
-                logging.info("Successfully closed connection to the PLC.")
             logging.info("Exiting program.")
             print("Goodbye!")
             break
