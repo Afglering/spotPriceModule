@@ -103,7 +103,6 @@ def info():
 
 def handle_plc_option():
     plc_connected = False
-    client = None
 
     connect_to_plc = input("Do you want to connect to the PLC? (y/n): ").strip().lower()
 
@@ -118,13 +117,13 @@ def handle_plc_option():
                     logging.info("Successfully connected to the PLC.")
 
                     data_to_write = {
-                        0: round(price_diff_eur, 2),  # Corresponds to 40001
-                        1: round(avg_price_eur, 2),   # Corresponds to 40002
-                        2: round(current_hour_price_DK1_EUR, 2),  # Corresponds to 40003
-                        3: round(current_hour_price_DK2_EUR, 2),  # Corresponds to 40004
-                        4: round(current_hour_price_avg_EUR, 2),  # Corresponds to 40005
-                        5: round(y_min_percentile, 2),  # Corresponds to 40006
-                        6: round(x_max_percentile, 2)   # Corresponds to 40007
+                        0: round(price_diff_eur, 2),
+                        1: round(avg_price_eur, 2),
+                        2: round(current_hour_price_DK1_EUR, 2),
+                        3: round(current_hour_price_DK2_EUR, 2),
+                        4: round(current_hour_price_avg_EUR, 2),
+                        5: round(y_min_percentile, 2),
+                        6: round(x_max_percentile, 2)
                     }
 
                     print("\n*** Register Data Preview ***")
