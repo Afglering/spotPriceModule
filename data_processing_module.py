@@ -10,9 +10,16 @@ import pandas as pd
 # Process the data from the API into a DataFrame and return it if successful
 def process_data(data, conversion_rate_dkk_to_eur):
     try:
-        records = [record for record in data['records'] if record['PriceArea'] in ['DK1', 'DK2']]
+        records = data['records']
         prices_df = pd.DataFrame(records)
-        prices_df = prices_df[['HourDK', 'PriceArea', 'SpotPriceDKK']]
+        prices_df = prices_df[['HourDK', 'SpotPriceDKK']]
+        # Convert HourDK to datetime
+        prices_df['HourDK'] = pd.to_datetime(prices_df['HourDK'])
+
+        # Filter records to keep only those from the current day
+        current_date = dt.now().date()
+        prices_df = prices_df[prices_df['HourDK'].dt.date == current_date]
+
         if conversion_rate_dkk_to_eur:
             prices_df['SpotPriceEUR'] = prices_df['SpotPriceDKK'] * conversion_rate_dkk_to_eur
         return prices_df
@@ -66,13 +73,17 @@ def calculate_daily_average(prices_df):
 # Get the current hour and display the price for DK1, DK2, and the average of the two prices
 def get_current_hour_prices(prices_df):
     current_hour = dt.now().hour
-    current_hour_prices = prices_df[prices_df['HourDK'].str.contains(f'T{current_hour:02d}:')]
-    current_hour_price_DK1_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK1']['SpotPriceEUR'].values[
-        0]
-    current_hour_price_DK2_EUR = current_hour_prices[current_hour_prices['PriceArea'] == 'DK2']['SpotPriceEUR'].values[
-        0]
-    current_hour_price_avg_EUR = (current_hour_price_DK1_EUR + current_hour_price_DK2_EUR) / 2
-    return current_hour_price_DK1_EUR, current_hour_price_DK2_EUR, current_hour_price_avg_EUR
+    # Filter based on the hour
+    current_hour_prices = prices_df[prices_df['HourDK'].dt.hour == current_hour]
+
+    # Assuming you only have one price per hour, this will get the price for DK1
+    if not current_hour_prices.empty:
+        current_hour_price_DK1_EUR = current_hour_prices['SpotPriceEUR'].values[0]
+    else:
+        current_hour_price_DK1_EUR = None  # Or handle this scenario appropriately
+
+    return current_hour_price_DK1_EUR
+
 
 
 # Ask user if they want to sort the prices from low to high (y/n)

@@ -49,8 +49,8 @@ if data:
     prices_df = process_data(data, conversion_rate_dkk_to_eur)
 
     # Get the current hour and the price for DK1, DK2 as well as the average of the two prices
-    current_hour_price_DK1_EUR, current_hour_price_DK2_EUR, current_hour_price_avg_EUR = get_current_hour_prices(
-        prices_df)
+    current_hour_price_DK1_EUR = get_current_hour_prices(prices_df)
+
 
     # Calculate price difference between daily minimum and maximum in EUR
     price_diff_eur = calculate_price_difference(prices_df)
@@ -89,10 +89,7 @@ def percentile():
 
 def info():
     print("\n*** CURRENT HOUR PRICE POINT ***")
-    print(
-        f'The price for the current hour ({dt.now().hour}) is {current_hour_price_DK1_EUR:.2f} EUR/MWh for DK1 and '
-        f'{current_hour_price_DK2_EUR:.2f} EUR/MWh for DK2. \n'
-        f'The average of the two PriceAreas is {current_hour_price_avg_EUR:.2f} EUR/MWh\n')
+    print(f'The price for the current hour ({dt.now().hour}) is {current_hour_price_DK1_EUR:.2f} EUR/MWh for DK1\n')
 
     print("*** SPOT PRICE DIFFERENCE ***")
     print(f'The price difference between the daily minimum and maximum is {price_diff_eur:.2f} EUR/MWh\n')
@@ -120,10 +117,8 @@ def handle_plc_option():
                         0: round(price_diff_eur, 2),
                         1: round(avg_price_eur, 2),
                         2: round(current_hour_price_DK1_EUR, 2),
-                        3: round(current_hour_price_DK2_EUR, 2),
-                        4: round(current_hour_price_avg_EUR, 2),
-                        5: round(y_min_percentile, 2),
-                        6: round(x_max_percentile, 2)
+                        3: round(y_min_percentile, 2),
+                        4: round(x_max_percentile, 2)
                     }
 
                     print("\n*** Register Data Preview ***")
