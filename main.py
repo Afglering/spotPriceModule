@@ -15,7 +15,6 @@ x_max_percentile = None
 y_min_percentile = None
 price_diff_eur = None
 avg_price_eur = None
-current_hour_price_avg_EUR = None
 plc_connected = False
 data_to_write = None
 client = None
@@ -89,7 +88,10 @@ def percentile():
 
 def info():
     print("\n*** CURRENT HOUR PRICE POINT ***")
-    print(f'The price for the current hour ({dt.now().hour}) is {current_hour_price_DK1_EUR:.2f} EUR/MWh for DK1\n')
+    if current_hour_price_DK1_EUR is not None:
+        print(f'The price for the current hour ({dt.now().hour}) is {current_hour_price_DK1_EUR:.2f} EUR/MWh for DK1\n')
+    else:
+        print("Current hour price for DK1 is not available.")
 
     print("*** SPOT PRICE DIFFERENCE ***")
     print(f'The price difference between the daily minimum and maximum is {price_diff_eur:.2f} EUR/MWh\n')
