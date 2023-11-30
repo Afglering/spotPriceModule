@@ -19,7 +19,6 @@ plc_connected = False
 data_to_write = None
 client = None
 prices_df = None
-MOXA_PORT = 502
 
 # Setup logging
 setup_logging()

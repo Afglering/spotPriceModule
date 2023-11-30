@@ -1,0 +1,96 @@
+2023-11-24 09:33:31,084 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:33:31,097 - ERROR - An error occurred while validating the API key: HTTPSConnectionPool(host='api.exchangerate-api.com', port=443): Max retries exceeded with url: /v4/latest/DKK (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x00000186FC7F2E60>: Failed to resolve 'api.exchangerate-api.com' ([Errno 11001] getaddrinfo failed)"))
+2023-11-24 09:33:31,098 - ERROR - Exiting due to invalid API key.
+2023-11-24 09:33:34,408 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:33:34,422 - ERROR - An error occurred while validating the API key: HTTPSConnectionPool(host='api.exchangerate-api.com', port=443): Max retries exceeded with url: /v4/latest/DKK (Caused by NameResolutionError("<urllib3.connection.HTTPSConnection object at 0x000001FCCD592E60>: Failed to resolve 'api.exchangerate-api.com' ([Errno 11001] getaddrinfo failed)"))
+2023-11-24 09:33:34,422 - ERROR - Exiting due to invalid API key.
+2023-11-24 09:34:59,246 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:35:00,050 - INFO - Successfully validated the exchange rate API key.
+2023-11-24 09:35:00,772 - INFO - Successfully fetched exchange rate.
+2023-11-24 09:35:01,650 - INFO - Successfully fetched electricity prices.
+2023-11-24 09:35:01,672 - INFO - Successfully read from cache.
+2023-11-24 09:35:05,379 - INFO - Prompting user choice.
+2023-11-24 09:35:05,381 - INFO - User chose to see daily info.
+2023-11-24 09:35:11,785 - INFO - Prompting user choice.
+2023-11-24 09:35:11,786 - INFO - Successfully read from cache.
+2023-11-24 09:35:16,091 - INFO - PLC TCP client setup successful.
+2023-11-24 09:35:16,091 - INFO - Successfully connected to the PLC.
+2023-11-24 09:35:19,390 - INFO - Successfully wrote to registers.
+2023-11-24 09:35:19,391 - INFO - PLC connection closed.
+2023-11-24 09:35:19,391 - INFO - User chose to initiate plc connection.
+2023-11-24 09:35:51,760 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:35:52,457 - INFO - Successfully validated the exchange rate API key.
+2023-11-24 09:35:53,066 - INFO - Successfully fetched exchange rate.
+2023-11-24 09:35:53,362 - INFO - Successfully fetched electricity prices.
+2023-11-24 09:35:53,369 - INFO - Successfully read from cache.
+2023-11-24 09:36:03,303 - INFO - Prompting user choice.
+2023-11-24 09:36:03,305 - INFO - User chose to see daily info.
+2023-11-24 09:36:10,814 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:36:11,497 - INFO - Successfully validated the exchange rate API key.
+2023-11-24 09:36:12,218 - INFO - Successfully fetched exchange rate.
+2023-11-24 09:36:12,449 - INFO - Successfully fetched electricity prices.
+2023-11-24 09:36:12,456 - INFO - Successfully read from cache.
+2023-11-24 09:36:14,397 - INFO - Prompting user choice.
+2023-11-24 09:36:14,399 - INFO - User chose to see daily info.
+2023-11-24 09:36:23,662 - INFO - Prompting user choice.
+2023-11-24 09:36:23,664 - INFO - Successfully read from cache.
+2023-11-24 09:36:28,365 - INFO - PLC TCP client setup successful.
+2023-11-24 09:36:28,365 - INFO - Successfully connected to the PLC.
+2023-11-24 09:36:37,641 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:36:37,647 - INFO - Successfully wrote value 7995 to register address 0.
+2023-11-24 09:36:37,676 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:36:37,679 - INFO - Successfully wrote value 5758 to register address 1.
+2023-11-24 09:36:37,683 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:36:37,687 - INFO - Successfully wrote value 7848 to register address 2.
+2023-11-24 09:36:37,707 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:36:37,711 - INFO - Successfully wrote value 7138 to register address 3.
+2023-11-24 09:36:37,737 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:36:37,742 - INFO - Successfully wrote value 7138 to register address 4.
+2023-11-24 09:36:37,743 - INFO - Successfully wrote to registers.
+2023-11-24 09:36:37,743 - INFO - PLC connection closed.
+2023-11-24 09:36:37,743 - INFO - User chose to initiate plc connection.
+2023-11-24 09:36:43,866 - INFO - Exiting program.
+2023-11-24 09:36:58,800 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:36:59,498 - INFO - Successfully validated the exchange rate API key.
+2023-11-24 09:37:00,217 - INFO - Successfully fetched exchange rate.
+2023-11-24 09:37:00,479 - INFO - Successfully fetched electricity prices.
+2023-11-24 09:37:00,486 - INFO - Successfully read from cache.
+2023-11-24 09:37:09,870 - INFO - Prompting user choice.
+2023-11-24 09:37:09,871 - INFO - Successfully read from cache.
+2023-11-24 09:37:14,376 - INFO - PLC TCP client setup successful.
+2023-11-24 09:37:14,377 - INFO - Successfully connected to the PLC.
+2023-11-24 09:47:36,550 - INFO - Successfully wrote to registers.
+2023-11-24 09:47:36,551 - INFO - PLC connection closed.
+2023-11-24 09:47:36,551 - INFO - User chose to initiate plc connection.
+2023-11-24 09:47:40,828 - INFO - Prompting user choice.
+2023-11-24 09:47:40,830 - INFO - Successfully read from cache.
+2023-11-24 09:48:05,981 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:48:06,684 - INFO - Successfully validated the exchange rate API key.
+2023-11-24 09:48:07,373 - INFO - Successfully fetched exchange rate.
+2023-11-24 09:48:07,636 - INFO - Successfully fetched electricity prices.
+2023-11-24 09:48:07,644 - INFO - Successfully read from cache.
+2023-11-24 09:51:06,928 - INFO - Prompting user choice.
+2023-11-24 09:51:06,930 - INFO - User chose to see daily info.
+2023-11-24 09:51:16,360 - INFO - Exiting program.
+2023-11-24 09:51:19,340 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-24 09:51:20,076 - INFO - Successfully validated the exchange rate API key.
+2023-11-24 09:51:20,796 - INFO - Successfully fetched exchange rate.
+2023-11-24 09:51:21,073 - INFO - Successfully fetched electricity prices.
+2023-11-24 09:51:21,080 - INFO - Successfully read from cache.
+2023-11-24 09:51:23,950 - INFO - Prompting user choice.
+2023-11-24 09:51:23,951 - INFO - Successfully read from cache.
+2023-11-24 09:51:31,597 - INFO - PLC TCP client setup successful.
+2023-11-24 09:51:31,598 - INFO - Successfully connected to the PLC.
+2023-11-24 09:51:33,800 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:51:33,805 - INFO - Successfully wrote value 7995 to register address 0.
+2023-11-24 09:51:33,818 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:51:33,821 - INFO - Successfully wrote value 5758 to register address 1.
+2023-11-24 09:51:33,825 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:51:33,829 - INFO - Successfully wrote value 7848 to register address 2.
+2023-11-24 09:51:33,832 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:51:33,836 - INFO - Successfully wrote value 94 to register address 3.
+2023-11-24 09:51:33,840 - INFO - Connected to the PLC over TCP/IP.
+2023-11-24 09:51:33,843 - INFO - Successfully wrote value 7742 to register address 4.
+2023-11-24 09:51:33,843 - INFO - Successfully wrote to registers.
+2023-11-24 09:51:33,844 - INFO - PLC connection closed.
+2023-11-24 09:51:33,844 - INFO - User chose to initiate plc connection.

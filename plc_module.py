@@ -4,12 +4,9 @@ import logging
 from pymodbus.client import ModbusTcpClient as ModbusClient
 from pymodbus.exceptions import ConnectionException, ModbusIOException
 
-# IP address for the Moxa MGate 5103 device
-MOXA_IP_ADDRESS = '192.168.127.254'
-
 
 # Setup plc modbus tcp client
-def setup_plc_client(IP_ADDRESS, PORT=502):
+def setup_plc_client(IP_ADDRESS, PORT):
     try:
         client = ModbusClient(host=IP_ADDRESS, port=PORT)
         if client.connect():

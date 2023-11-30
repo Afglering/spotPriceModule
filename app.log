@@ -1,0 +1,8 @@
+2023-11-30 19:10:06,837 - INFO - Authorized access by MAC address: 3c:a0:67:e6:54:32
+2023-11-30 19:10:07,605 - INFO - Successfully validated the exchange rate API key.
+2023-11-30 19:10:08,231 - INFO - Successfully fetched exchange rate.
+2023-11-30 19:10:08,612 - INFO - Successfully fetched electricity prices.
+2023-11-30 19:10:08,634 - WARNING - Warning: Cache file not found. Using default values.
+2023-11-30 19:10:11,963 - INFO - Prompting user choice.
+2023-11-30 19:10:11,963 - INFO - User chose to see daily info.
+2023-11-30 19:10:26,500 - INFO - Exiting program.
