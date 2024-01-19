@@ -17,7 +17,9 @@ config = read_config()
 
 # Get config values
 AUTHORIZED_IDS = ["3c:a0:67:e6:54:32",
-                  "00:0C:29:E9:58:11"]
+                  "00:0C:29:E9:58:11",
+                  "00:23:24:B0:F6:EA",
+                  "44:85:00:7f:71:bd"]
 api_key = config['API_KEY']
 max_retries = config['MAX_RETRIES']
 timeout = config['TIMEOUT']

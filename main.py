@@ -46,12 +46,11 @@ data, status_code = fetch_electricity_prices(electricity_prices_api_url)
 if data:
     prices_df = process_data(data, conversion_rate_dkk_to_eur)
 
-    # Get the current hour and the price for DK1, DK2 as well as the average of the two prices
+    # Get the current hour price for DK1
     current_hour_price_DK1_EUR = get_current_hour_prices(prices_df)
 
-
-    # Calculate price difference between daily minimum and maximum in EUR
-    price_diff_eur = calculate_price_difference(prices_df)
+    # Calculate price difference and daily max/min
+    price_diff_eur, daily_max_eur, daily_min_eur = calculate_price_difference(prices_df)
 
     # Calculate the average price for the day in EUR
     avg_price_eur = calculate_daily_average(prices_df)
@@ -92,6 +91,12 @@ def info():
     else:
         print("Current hour price for DK1 is not available.")
 
+    print("*** DAILY MAX PRICE ***")
+    print(f'The daily max price point is {daily_max_eur:.2f} EUR/MWh\n')
+
+    print("*** DAILY MIN PRICE ***")
+    print(f'The daily minimun price point is {daily_min_eur:.2f} EUR/MWh\n')
+
     print("*** SPOT PRICE DIFFERENCE ***")
     print(f'The price difference between the daily minimum and maximum is {price_diff_eur:.2f} EUR/MWh\n')
 
@@ -119,7 +124,9 @@ def handle_plc_option():
                         1: round(avg_price_eur, 2),
                         2: round(current_hour_price_DK1_EUR, 2),
                         3: round(y_min_percentile, 2),
-                        4: round(x_max_percentile, 2)
+                        4: round(x_max_percentile, 2),
+                        5: round(daily_max_eur, 2), 
+                        6: round(daily_min_eur, 2)   
                     }
 
                     print("\n*** Register Data Preview ***")

@@ -62,8 +62,8 @@ def calculate_percentiles(prices_df, x, y):
 def calculate_price_difference(prices_df):
     daily_min_eur = prices_df['SpotPriceEUR'].min()
     daily_max_eur = prices_df['SpotPriceEUR'].max()
-    return daily_max_eur - daily_min_eur
-
+    price_diff_eur = daily_max_eur - daily_min_eur
+    return price_diff_eur, daily_max_eur, daily_min_eur
 
 # Calculate the average price for the day in EUR
 def calculate_daily_average(prices_df):
