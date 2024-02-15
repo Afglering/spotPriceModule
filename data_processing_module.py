@@ -31,17 +31,13 @@ def process_data(data, conversion_rate_dkk_to_eur):
 # Calculate the percentiles and return a DataFrame
 # Modify the calculate_percentiles function to return the calculated percentiles
 def calculate_percentiles(prices_df, x, y):
-    percentiles_df = pd.DataFrame(columns=['Percentile', 'SpotPriceEUR'])
     x_max_percentile = None
     y_min_percentile = None
 
     if x:
         try:
             x = float(x)
-            x_max_percentile = prices_df['SpotPriceEUR'].quantile(1 - x)
-            df_x = pd.DataFrame([{'Percentile': f'{x * 100}th Max', 'SpotPriceEUR': x_max_percentile}],
-                                columns=percentiles_df.columns)
-            percentiles_df = pd.concat([percentiles_df, df_x])
+            x_max_percentile = prices_df['SpotPriceEUR'].quantile(x)
         except ValueError:
             logging.error("Error: Invalid input for x")
 
@@ -49,13 +45,11 @@ def calculate_percentiles(prices_df, x, y):
         try:
             y = float(y)
             y_min_percentile = prices_df['SpotPriceEUR'].quantile(y)
-            df_y = pd.DataFrame([{'Percentile': f'{y * 100}th Min', 'SpotPriceEUR': y_min_percentile}],
-                                columns=percentiles_df.columns)
-            percentiles_df = pd.concat([percentiles_df, df_y])
         except ValueError:
             logging.error("Error: Invalid input for y")
 
-    return percentiles_df, x_max_percentile, y_min_percentile
+    return x_max_percentile, y_min_percentile
+
 
 
 # Calculate the price difference between the daily minimum and maximum in EUR
@@ -68,7 +62,6 @@ def calculate_price_difference(prices_df):
 # Calculate the average price for the day in EUR
 def calculate_daily_average(prices_df):
     return prices_df['SpotPriceEUR'].mean()
-
 
 # Get the current hour and display the price for DK1, DK2, and the average of the two prices
 def get_current_hour_prices(prices_df):
@@ -83,7 +76,6 @@ def get_current_hour_prices(prices_df):
         current_hour_price_DK1_EUR = None  # Or handle this scenario appropriately
 
     return current_hour_price_DK1_EUR
-
 
 
 # Ask user if they want to sort the prices from low to high (y/n)

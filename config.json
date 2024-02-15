@@ -6,6 +6,6 @@
   "ELECTRICITY_PRICES_API_URL": "https://api.energidataservice.dk/dataset/Elspotprices?start=StartOfDay&end=StartOfDay%2BP1D&filter={%22PriceArea%22:[%22DK1%22]}&columns=HourDK,SpotPriceDKK",
   "SCALING_FACTOR": 100,
   "UNIT_ID": 1,
-  "MOXA_IP_ADDRESS": "192.168.127.254",
+  "MOXA_IP_ADDRESS": "192.168.0.40",
   "MOXA_PORT": 502
 }

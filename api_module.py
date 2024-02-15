@@ -2,7 +2,6 @@
 import json
 import logging
 import time
-
 import requests
 
 
@@ -49,8 +48,6 @@ def fetch_exchange_rate(api_key, exchange_rate_api_url, max_retries=3):
 
 # Fetch the electricity prices from the API
 def fetch_electricity_prices(electricity_prices_api_url, max_retries=3):
-    response = None  # Initialize response to None
-    status_code = 'N/A'  # Initialize status_code to 'N/A'
     for attempt in range(max_retries):
         try:
             response = requests.get(electricity_prices_api_url)
@@ -60,21 +57,24 @@ def fetch_electricity_prices(electricity_prices_api_url, max_retries=3):
                 try:
                     logging.info("Successfully fetched electricity prices.")
                     return response.json(), status_code
-                except json.JSONDecodeError:
-                    logging.error("Error while parsing JSON response.")
-                    break
+                except json.JSONDecodeError as e:
+                    logging.error("Error while parsing JSON response: {}".format(e))
+                    break  # Break out of the loop if JSON parsing fails
             elif status_code == 401:  # Unauthorized
-                logging.error("Unauthorized access to the electricity prices API.")
-                break
+                logging.error("Unauthorized access to the electricity prices API. Status code: {}".format(status_code))
+                break  # Break out of the loop if unauthorized
             elif status_code == 429:  # Too Many Requests
-                logging.warning("Rate limit exceeded for the electricity prices API.")
-                time.sleep(60)  # Wait for 60 seconds before the next attempt
+                logging.warning("Rate limit exceeded for the electricity prices API. Status code: {}".format(status_code))
+                if attempt < max_retries - 1:
+                    time.sleep(60)  # Wait for 60 seconds before the next attempt
             else:
-                logging.warning(
-                    f"Failed to fetch electricity prices. Attempt {attempt + 1}. Status code: {status_code}. Retrying...")
-                time.sleep(2 ** attempt)
+                logging.warning("Failed to fetch electricity prices. Attempt {}. Status code: {}".format(attempt + 1, status_code))
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff
         except requests.RequestException as e:
-            logging.error(f"An error occurred: {e}")
+            logging.error("An error occurred while fetching electricity prices: {}".format(e))
+            if attempt < max_retries - 1:
+                time.sleep(2 ** attempt)  # Exponential backoff
 
-    logging.error(f"Failed to fetch electricity prices after {max_retries} attempts.")
+    logging.error("Failed to fetch electricity prices after {} attempts. Final status code: {}".format(max_retries, status_code))
     return None, status_code if response else 'N/A'
