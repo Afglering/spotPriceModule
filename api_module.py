@@ -1,7 +1,6 @@
 # Purpose: This module contains functions for communicating with the API
 import logging
 import time
-
 import requests
 
 

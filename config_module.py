@@ -1,7 +1,6 @@
 # Purpose: Setup logging for the application and read the config file.
 import json
 
-
 # Read config file
 def read_config(filename='config.json'):
     try:
@@ -11,7 +10,6 @@ def read_config(filename='config.json'):
         raise
     except json.JSONDecodeError:
         raise
-
 
 config = read_config()
 

@@ -3,9 +3,7 @@ import logging
 import pickle
 import uuid
 from datetime import datetime as dt
-
 import pandas as pd
-
 
 # Process the data from the API into a DataFrame and return it if successful
 def process_data(data, conversion_rate_dkk_to_eur):
@@ -26,7 +24,6 @@ def process_data(data, conversion_rate_dkk_to_eur):
     except (ValueError, TypeError) as e:
         logging.error(f"Error while parsing data into DataFrame: {e}")
         exit(1)
-
 
 # Calculate the percentiles and return a DataFrame
 # Modify the calculate_percentiles function to return the calculated percentiles
@@ -49,8 +46,6 @@ def calculate_percentiles(prices_df, x, y):
             logging.error("Error: Invalid input for y")
 
     return x_max_percentile, y_min_percentile
-
-
 
 # Calculate the price difference between the daily minimum and maximum in EUR
 def calculate_price_difference(prices_df):
@@ -77,13 +72,11 @@ def get_current_hour_prices(prices_df):
 
     return current_hour_price_DK1_EUR
 
-
 # Ask user if they want to sort the prices from low to high (y/n)
 def sort_prices(prices_df):
     sort = input("*** SORTING PROMPT ***\nSort prices from low to high? (y/n): ")
     if sort == 'y':
         prices_df.sort_values(by=['SpotPriceEUR'], inplace=True)
-
 
 # Save the specified percentiles to a cache file
 def save_percentiles_to_cache(x, y):
@@ -92,7 +85,6 @@ def save_percentiles_to_cache(x, y):
             pickle.dump((x, y), f)
     except (PermissionError, pickle.PicklingError) as e:
         logging.error(f"Error while saving percentiles to cache: {e}")
-
 
 # Load the last cached percentiles and return them
 def load_cached_percentiles():
@@ -109,12 +101,10 @@ def load_cached_percentiles():
         logging.error("Error while reading the cache file. Using default values.")
     return None, None
 
-
 # Get the MAC address of the computer running the program
 def get_mac_address():
     mac = uuid.UUID(int=uuid.getnode()).hex[-12:]
     return ":".join([mac[e:e + 2] for e in range(0, 11, 2)])
-
 
 # Print the program logo
 def print_logo():

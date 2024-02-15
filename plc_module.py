@@ -1,9 +1,7 @@
 # Purpose: This module contains functions for communicating with the PLC over Modbus TCP.
 import logging
-
 from pymodbus.client import ModbusTcpClient as ModbusClient
 from pymodbus.exceptions import ConnectionException, ModbusIOException
-
 
 # Setup plc modbus tcp client
 def setup_plc_client(IP_ADDRESS, PORT):
@@ -11,7 +9,6 @@ def setup_plc_client(IP_ADDRESS, PORT):
         client = ModbusClient(host=IP_ADDRESS, port=PORT)
         if client.connect():
             logging.info("PLC TCP client setup successful.")
-            print("PLC TCP client setup successful.")
             return client
         else:
             logging.error("Failed to connect to PLC TCP client.")
@@ -19,7 +16,6 @@ def setup_plc_client(IP_ADDRESS, PORT):
     except Exception as e:
         logging.error(f"Error setting up PLC TCP client: {e}")
         return None
-
 
 # Write data to plc over Modbus TCP with enhanced diagnostics
 def write_data_to_plc(client, register_address, value, scaling_factor, unit_id=1):
@@ -53,5 +49,4 @@ def write_data_to_plc(client, register_address, value, scaling_factor, unit_id=1
         logging.error(f"An unexpected error occurred while writing to PLC: {e}")
         return False
     finally:
-        # It's usually a good idea to close the client, but you may wish to manage the connection elsewhere
         client.close()
