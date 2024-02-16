@@ -126,24 +126,25 @@ def plc_update_thread():
                 price_diff_eur, daily_max_eur, daily_min_eur = calculate_price_difference(prices_df)
                 avg_price_eur = calculate_daily_average(prices_df)
 
-                # Perform percentile calculations only if the user opted in
-                if calculate_percentiles_flag:
+                # Check if percentile calculation is bypassed
+                if not calculate_percentiles_flag:
+                    # Set x_max_percentile and y_min_percentile to bypass values
+                    x_max_percentile, y_min_percentile = 0, 0
+                else:
+                    # Perform percentile calculations only if opted in
                     x_cached, y_cached = load_cached_percentiles()
                     if x_cached is not None and y_cached is not None:
                         x_max_percentile, y_min_percentile = calculate_percentiles(prices_df, x_cached, y_cached)
                     else:
                         logging.warning("Cached percentile values not found. Skipping percentile calculation.")
-                else:
-                    # Bypass percentile calculations and set to a default or bypass value
-                    x_max_percentile, y_min_percentile = None, None  # Indicate bypass
 
-                # Prepare data to write to PLC, adjusting for whether percentiles are calculated
+                # Prepare data to write to PLC, adjusting for whether percentiles are calculated or bypassed
                 data_to_write = {
                     0: round(price_diff_eur, 2) if price_diff_eur is not None else 0,
                     1: round(avg_price_eur, 2) if avg_price_eur is not None else 0,
                     2: round(current_hour_price_DK1_EUR, 2) if current_hour_price_DK1_EUR is not None else 0,
-                    3: 0 if not calculate_percentiles_flag or y_min_percentile is None else round(y_min_percentile, 2),
-                    4: 0 if not calculate_percentiles_flag or x_max_percentile is None else round(x_max_percentile, 2),
+                    3: 0 if x_max_percentile == 0 and y_min_percentile == 0 else round(y_min_percentile, 2),
+                    4: 0 if x_max_percentile == 0 and y_min_percentile == 0 else round(x_max_percentile, 2),
                     5: round(daily_max_eur, 2) if daily_max_eur is not None else 0,
                     6: round(daily_min_eur, 2) if daily_min_eur is not None else 0,
                 }
@@ -185,6 +186,7 @@ def handle_plc_option():
     if calculate_percentiles_flag:
         percentile()  # Call the function that prompts for x and y values and processes them
     else:
+        flush_cache() 
         # If not calculating percentiles, set default values or indicate bypass
         x_max_percentile, y_min_percentile = None, None  # Indicating bypass or default state
 

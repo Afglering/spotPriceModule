@@ -1,5 +1,6 @@
 # data_processing_module.py 
 import logging
+import os
 import pickle
 import uuid
 from datetime import datetime as dt
@@ -101,6 +102,17 @@ def load_cached_percentiles():
         logging.error("Error while reading the cache file. Using default values.")
     return None, None
 
+def flush_cache():
+    cache_file = 'percentiles_cache.pkl'  # Cache file name
+    if os.path.exists(cache_file):
+        try:
+            os.remove(cache_file)
+            logging.info("Cache file successfully flushed (deleted).")
+        except Exception as e:
+            logging.error(f"Error while attempting to flush (delete) cache file: {e}")
+    else:
+        logging.info("Cache file does not exist, nothing to flush.")
+        
 # Get the MAC address of the computer running the program
 def get_mac_address():
     mac = uuid.UUID(int=uuid.getnode()).hex[-12:]
