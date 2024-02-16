@@ -1,4 +1,4 @@
-# Purpose: This module contains functions for processing the data from the API and calculating the statistics.
+# data_processing_module.py 
 import logging
 import pickle
 import uuid

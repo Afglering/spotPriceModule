@@ -22,6 +22,7 @@ plc_connected = False
 data_to_write = None
 client = None
 prices_df = None
+calculate_percentiles_flag = True 
 
 # Setup logging
 setup_logging()
@@ -69,8 +70,8 @@ def percentile():
     # Load the last cached percentiles
     x_last, y_last = load_cached_percentiles()
 
-    x_input = input(f"Enter the xth maximum percentile (e.g., 0.66 for 66%), or press ENTER to use last value ({x_last}): ")
-    y_input = input(f"Enter the yth minimum percentile (e.g., 0.33 for 33%), or press ENTER to use last value ({y_last}):\n")
+    x_input = input(f"Enter the xth maximum percentile (MIN: 0.01, MAX: 0.99), or press ENTER to use last value ({x_last}): ")
+    y_input = input(f"Enter the yth minimum percentile (MIN: 0.01, MAX: 0.99),, or press ENTER to use last value ({y_last}):\n")
 
     # Use cached/default values if user does not input anything
     x = float(x_input) if x_input else (float(x_last) if x_last is not None else 0.66)
@@ -113,12 +114,11 @@ def info():
 
 
 def plc_update_thread():
-    global prices_df  # Ensure globals are declared
+    global prices_df, current_hour_price_DK1_EUR, price_diff_eur, avg_price_eur, x_max_percentile, y_min_percentile, calculate_percentiles_flag
 
     while plc_connected:
         try:
-            x_cached, y_cached = load_cached_percentiles()
-
+            # Fetch and process electricity price data
             data, status_code = fetch_electricity_prices(electricity_prices_api_url)
             if data and status_code == 200:
                 prices_df = process_data(data, conversion_rate_dkk_to_eur)
@@ -126,29 +126,36 @@ def plc_update_thread():
                 price_diff_eur, daily_max_eur, daily_min_eur = calculate_price_difference(prices_df)
                 avg_price_eur = calculate_daily_average(prices_df)
 
-                if x_cached is not None and y_cached is not None:
-                    x_max_percentile, y_min_percentile = calculate_percentiles(prices_df, x_cached, y_cached)
-
-                    # Check for None values before rounding and writing to PLC
-                    data_to_write = {
-                        0: round(price_diff_eur, 2) if price_diff_eur is not None else 0,
-                        1: round(avg_price_eur, 2) if avg_price_eur is not None else 0,
-                        2: round(current_hour_price_DK1_EUR, 2) if current_hour_price_DK1_EUR is not None else 0,
-                        3: round(y_min_percentile, 2) if y_min_percentile is not None else 0,
-                        4: round(x_max_percentile, 2) if x_max_percentile is not None else 0,
-                        5: round(daily_max_eur, 2) if daily_max_eur is not None else 0,
-                        6: round(daily_min_eur, 2) if daily_min_eur is not None else 0
-                    }
-
-                    for address, value in data_to_write.items():
-                        success = write_data_to_plc(client, address, value, scaling_factor, unit_id)
-                        if success:
-                            logging.info(f"Successfully updated register {address} with value {value}.")
-                            print(f"PLC Update: Successfully updated register {address} with value {value}.")
-                        else:
-                            logging.error(f"Failed to update register {address} with value {value}.")
+                # Perform percentile calculations only if the user opted in
+                if calculate_percentiles_flag:
+                    x_cached, y_cached = load_cached_percentiles()
+                    if x_cached is not None and y_cached is not None:
+                        x_max_percentile, y_min_percentile = calculate_percentiles(prices_df, x_cached, y_cached)
+                    else:
+                        logging.warning("Cached percentile values not found. Skipping percentile calculation.")
                 else:
-                    logging.warning("Percentile values not set. Skipping percentile calculation.")
+                    # Bypass percentile calculations and set to a default or bypass value
+                    x_max_percentile, y_min_percentile = None, None  # Indicate bypass
+
+                # Prepare data to write to PLC, adjusting for whether percentiles are calculated
+                data_to_write = {
+                    0: round(price_diff_eur, 2) if price_diff_eur is not None else 0,
+                    1: round(avg_price_eur, 2) if avg_price_eur is not None else 0,
+                    2: round(current_hour_price_DK1_EUR, 2) if current_hour_price_DK1_EUR is not None else 0,
+                    3: 0 if not calculate_percentiles_flag or y_min_percentile is None else round(y_min_percentile, 2),
+                    4: 0 if not calculate_percentiles_flag or x_max_percentile is None else round(x_max_percentile, 2),
+                    5: round(daily_max_eur, 2) if daily_max_eur is not None else 0,
+                    6: round(daily_min_eur, 2) if daily_min_eur is not None else 0,
+                }
+
+                # Write the data to the PLC
+                for address, value in data_to_write.items():
+                    success = write_data_to_plc(client, address, value, scaling_factor, unit_id)
+                    if success:
+                        logging.info(f"Successfully updated register {address} with value {value}.")
+                        print(f"PLC Update: Successfully updated register {address} with value {value}.")
+                    else:
+                        logging.error(f"Failed to update register {address} with value {value}.")
 
             else:
                 logging.error(f"Failed to fetch electricity prices. Status code: {status_code}")
@@ -160,53 +167,63 @@ def plc_update_thread():
         finally:
             logging.info("Completed PLC update cycle. Next update in 1 hour.")
             print("Completed PLC update cycle. Next update in 1 hour.\n")
-            # Wait for an hour before the next update, checking every 10 seconds if the connection is still active
+            # Pause before the next cycle
             for _ in range(360):  # 360 iterations * 10 seconds = 3600 seconds (1 hour)
                 time.sleep(10)
                 if not plc_connected:
                     break
 
 def handle_plc_option():
-    global plc_connected, client
+    global plc_connected, client, calculate_percentiles_flag, x_max_percentile, y_min_percentile
     plc_connected = False
 
-    try:
-        connect_to_plc = input("Do you want to connect to the PLC? (y/n): ").strip().lower()
+    # First, ask if the user wants to calculate percentiles
+    calculate_percentiles_decision = input("Do you want to calculate percentiles? (y/n): ").strip().lower()
+    calculate_percentiles_flag = (calculate_percentiles_decision == 'y')
 
-        if connect_to_plc == 'y':
-            client = setup_plc_client(IP_ADDRESS=MOXA_IP_ADDRESS, PORT=MOXA_PORT)
+    # If the user wants to calculate percentiles, then proceed to ask for the specific values
+    if calculate_percentiles_flag:
+        percentile()  # Call the function that prompts for x and y values and processes them
+    else:
+        # If not calculating percentiles, set default values or indicate bypass
+        x_max_percentile, y_min_percentile = None, None  # Indicating bypass or default state
 
-            if client:
-                plc_connected = True
-                logging.info("Successfully connected to the PLC.")
-                print("Connection to the PLC was successful.\n")
+    # Proceed with the PLC connection process
+    connect_to_plc = input("Do you want to connect to the PLC? (y/n): ").strip().lower()
+    if connect_to_plc == 'y':
+        client = setup_plc_client(IP_ADDRESS=MOXA_IP_ADDRESS, PORT=MOXA_PORT)
+        if client:
+            plc_connected = True
+            logging.info("Successfully connected to the PLC.")
+            print("Connection to the PLC was successful.\n")
 
-                plc_thread = threading.Thread(target=plc_update_thread)
-                plc_thread.start()
+            # Start the PLC update thread
+            plc_thread = threading.Thread(target=plc_update_thread)
+            plc_thread.start()
 
-                while True:
-                    user_input = input("Type 'exit' to stop PLC updates and return to the main menu: \n\n").strip().lower()
-                    if user_input == 'exit':
-                        plc_connected = False
-                        print("Stopping PLC updates...\n")
-                        break
+            # Keep the PLC updates running until the user decides to stop
+            while True:
+                user_input = input("Type 'exit' to stop PLC updates and return to the main menu: \n\n").strip().lower()
+                if user_input == 'exit':
+                    plc_connected = False
+                    print("Stopping PLC updates...\n")
+                    break
 
-                plc_thread.join()
-                logging.info("PLC update thread has finished.")
-                print("PLC updates have been stopped.\n")
-            else:
-                logging.error("Failed to connect to the PLC.")
-                print("Failed to connect to the PLC. Please check your connection settings.\n")
+            # Ensure the PLC update thread is properly closed
+            plc_thread.join()
+            logging.info("PLC update thread has finished.")
+            print("PLC updates have been stopped.\n")
+        else:
+            logging.error("Failed to connect to the PLC.")
+            print("Failed to connect to the PLC. Please check your connection settings.\n")
+    else:
+        print("PLC connection canceled by user.")
 
-    except Exception as e:
-        logging.error(f"Error in handle_plc_option: {e}")
-        print(f"An error occurred while attempting to connect to the PLC: {e}")
-
-    finally:
-        if client and client.is_socket_open():
-            client.close()
-            logging.info("PLC connection closed.")
-            print("PLC connection has been closed.\n")
+    # Cleanup or finalize actions if necessary before exiting the function
+    if client and client.is_socket_open():
+        client.close()
+        logging.info("PLC connection closed.")
+        print("PLC connection has been closed.\n")
 
 def handle_excel_option(prices_df, percentiles_df):
     # Ask user if they want to sort the prices
@@ -241,16 +258,16 @@ while True:
     print("1. See current prices (i)")
     print("2. Connect to PLC (p)")
     print("3. Save to Excel (x)")
-    print("4. Quit (q)")
+    print("4. Quit (q)\n")
+    print("INFO: THIS PROGRAM ONLY RUNS FOR AS LONG AS THIS WINDOW IS OPEN. IF YOU CLOSE IT, THE PROGRAM WILL STOP.\n")
 
     user_choice = input("\nPlease enter your choice: ").lower()
     logging.info("Prompting user choice.")
 
     if user_choice == 'p':
-        print("\nBefore continuing please enter the desired upper and lower percentile of the data\n")
-        x_max_percentile, y_min_percentile = percentile()
-        plc_connected = handle_plc_option()
-        logging.info("User chose to initiate plc connection.")
+        # Move the percentile decision making inside the PLC connection option
+        plc_connected = handle_plc_option()  # This function now includes percentile decision making
+        logging.info("User chose to initiate PLC connection.")
 
     elif user_choice == 'i':
         info()
