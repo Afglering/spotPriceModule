@@ -1,5 +1,7 @@
 # Import required modules
-from api_module import *
+from datetime import datetime
+from datetime import timedelta as td
+from api_module import fetch_electricity_prices, fetch_exchange_rate, validate_exchange_rate_api_key
 from config_module import *
 from data_processing_module import *
 from excel_module import *
@@ -116,63 +118,72 @@ def info():
 def plc_update_thread():
     global prices_df, current_hour_price_DK1_EUR, price_diff_eur, avg_price_eur, x_max_percentile, y_min_percentile, calculate_percentiles_flag
 
-    while plc_connected:
-        try:
-            # Fetch and process electricity price data
-            data, status_code = fetch_electricity_prices(electricity_prices_api_url)
-            if data and status_code == 200:
-                prices_df = process_data(data, conversion_rate_dkk_to_eur)
-                current_hour_price_DK1_EUR = get_current_hour_prices(prices_df)
-                price_diff_eur, daily_max_eur, daily_min_eur = calculate_price_difference(prices_df)
-                avg_price_eur = calculate_daily_average(prices_df)
+    try:
+        # Perform the first update immediately
+        perform_update()
+        logging.info("Completed PLC update cycle. Next update in 1 hour.\n")
+        print("Completed PLC update cycle. Next update in 1 hour.\n", flush = True)
 
-                # Check if percentile calculation is bypassed
-                if not calculate_percentiles_flag:
-                    # Set x_max_percentile and y_min_percentile to bypass values
-                    x_max_percentile, y_min_percentile = 0, 0
-                else:
-                    # Perform percentile calculations only if opted in
-                    x_cached, y_cached = load_cached_percentiles()
-                    if x_cached is not None and y_cached is not None:
-                        x_max_percentile, y_min_percentile = calculate_percentiles(prices_df, x_cached, y_cached)
-                    else:
-                        logging.warning("Cached percentile values not found. Skipping percentile calculation.")
+        while plc_connected:
+            # Calculate the time until the next hour begins
+            now = datetime.now()
+            next_hour = now.replace(minute=0, second=0, microsecond=0) + td(hours=1)
+            sleep_duration = (next_hour - now).total_seconds()
 
-                # Prepare data to write to PLC, adjusting for whether percentiles are calculated or bypassed
-                data_to_write = {
-                    0: round(price_diff_eur, 2) if price_diff_eur is not None else 0,
-                    1: round(avg_price_eur, 2) if avg_price_eur is not None else 0,
-                    2: round(current_hour_price_DK1_EUR, 2) if current_hour_price_DK1_EUR is not None else 0,
-                    3: 0 if x_max_percentile == 0 and y_min_percentile == 0 else round(y_min_percentile, 2),
-                    4: 0 if x_max_percentile == 0 and y_min_percentile == 0 else round(x_max_percentile, 2),
-                    5: round(daily_max_eur, 2) if daily_max_eur is not None else 0,
-                    6: round(daily_min_eur, 2) if daily_min_eur is not None else 0,
-                }
-
-                # Write the data to the PLC
-                for address, value in data_to_write.items():
-                    success = write_data_to_plc(client, address, value, scaling_factor, unit_id)
-                    if success:
-                        logging.info(f"Successfully updated register {address} with value {value}.")
-                        print(f"PLC Update: Successfully updated register {address} with value {value}.")
-                    else:
-                        logging.error(f"Failed to update register {address} with value {value}.")
-
-            else:
-                logging.error(f"Failed to fetch electricity prices. Status code: {status_code}")
-
-        except Exception as e:
-            logging.error(f"Error in PLC update thread: {e}")
-            print(f"PLC Update Error: {e}")
-
-        finally:
-            logging.info("Completed PLC update cycle. Next update in 1 hour.")
-            print("Completed PLC update cycle. Next update in 1 hour.\n")
-            # Pause before the next cycle
-            for _ in range(360):  # 360 iterations * 10 seconds = 3600 seconds (1 hour)
-                time.sleep(10)
+            # Sleep until the next hour, checking periodically if the thread should exit
+            start_time = time.time()
+            while time.time() - start_time < sleep_duration:
+                time.sleep(10)  # Check every 10 seconds if the thread should exit
                 if not plc_connected:
-                    break
+                    return  # Exit if the thread is no longer connected
+
+            # Perform update at the start of the new hour
+            perform_update()
+            logging.info("Completed PLC update cycle. Next update in 1 hour.\n")
+            print("Completed PLC update cycle. Next update in 1 hour.\n", flush = True)
+
+    except Exception as e:
+        logging.error(f"Error in PLC update thread: {e}")
+        print(f"PLC Update Error: {e}")
+
+def perform_update():
+    # Fetch and process electricity price data
+    data, status_code = fetch_electricity_prices(electricity_prices_api_url)
+    if data and status_code == 200:
+        global prices_df, current_hour_price_DK1_EUR, price_diff_eur, avg_price_eur, x_max_percentile, y_min_percentile
+        prices_df = process_data(data, conversion_rate_dkk_to_eur)
+        current_hour_price_DK1_EUR = get_current_hour_prices(prices_df)
+        price_diff_eur, daily_max_eur, daily_min_eur = calculate_price_difference(prices_df)
+        avg_price_eur = calculate_daily_average(prices_df)
+
+        if not calculate_percentiles_flag:
+            x_max_percentile, y_min_percentile = 0, 0  # Bypass values for percentiles
+        else:
+            x_cached, y_cached = load_cached_percentiles()
+            if x_cached is not None and y_cached is not None:
+                x_max_percentile, y_min_percentile = calculate_percentiles(prices_df, x_cached, y_cached)
+
+        data_to_write = {
+            0: round(price_diff_eur, 2) if price_diff_eur is not None else 0,
+            1: round(avg_price_eur, 2) if avg_price_eur is not None else 0,
+            2: round(current_hour_price_DK1_EUR, 2) if current_hour_price_DK1_EUR is not None else 0,
+            3: 0 if x_max_percentile == 0 and y_min_percentile == 0 else round(y_min_percentile, 2),
+            4: 0 if x_max_percentile == 0 and y_min_percentile == 0 else round(x_max_percentile, 2),
+            5: round(daily_max_eur, 2) if daily_max_eur is not None else 0,
+            6: round(daily_min_eur, 2) if daily_min_eur is not None else 0,
+        }
+
+        # Write the data to the PLC
+        for address, value in data_to_write.items():
+            success = write_data_to_plc(client, address, value, scaling_factor, unit_id)
+            if success:
+                logging.info(f"Successfully updated register {address} with value {value}.")
+                print(f"PLC Update: Successfully updated register {address} with value {value}.", flush = True)
+            else:
+                logging.error(f"Failed to update register {address} with value {value}.")
+    else:
+        logging.error(f"Failed to fetch electricity prices. Status code: {status_code}")
+
 
 def handle_plc_option():
     global plc_connected, client, calculate_percentiles_flag, x_max_percentile, y_min_percentile
@@ -267,7 +278,6 @@ while True:
     logging.info("Prompting user choice.")
 
     if user_choice == 'p':
-        # Move the percentile decision making inside the PLC connection option
         plc_connected = handle_plc_option()  # This function now includes percentile decision making
         logging.info("User chose to initiate PLC connection.")
 
