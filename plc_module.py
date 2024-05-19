@@ -1,4 +1,5 @@
-# Purpose: This module contains functions for communicating with the PLC over Modbus TCP.
+#plc_module. 
+
 import logging
 from pymodbus.client import ModbusTcpClient as ModbusClient
 from pymodbus.exceptions import ConnectionException, ModbusIOException

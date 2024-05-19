@@ -1,4 +1,5 @@
-# Purpose: Setup logging for the application
+# logging_module.py
+
 import logging
 
 # Setup logging to file app.log

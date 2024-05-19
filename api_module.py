@@ -1,4 +1,5 @@
-# Purpose: This module contains functions for communicating with the API
+# api_module.py
+
 import logging
 import time
 import requests

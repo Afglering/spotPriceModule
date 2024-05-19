@@ -1,4 +1,5 @@
-# Purpose: Setup logging for the application and read the config file.
+# config_module.py 
+
 import json
 
 # Read config file
