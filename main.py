@@ -73,6 +73,11 @@ def start_timer():
     timer_thread = threading.Timer(30.0, auto_connect_to_plc)
     timer_thread.start()
 
+def stop_timer():
+    global timer_thread
+    if timer_thread:
+        timer_thread.cancel()
+
 def auto_connect_to_plc():
     print("No user interaction detected. Attempting to connect to PLC with cached values...")
     try:
@@ -80,12 +85,6 @@ def auto_connect_to_plc():
     except Exception as e:
         logging.error(f"Automatic PLC connection failed: {e}")
         print(f"Automatic PLC connection failed: {e}")
-
-def reset_timer():
-    global timer_thread
-    if timer_thread:
-        timer_thread.cancel()
-    start_timer()
 
 def percentile():
     global x_max_percentile, y_min_percentile  # Declare global variables
@@ -208,6 +207,7 @@ def handle_plc_option(auto=False):
     if auto:
         calculate_percentiles_flag = False  # Using cached values, no user interaction
     else:
+        stop_timer()  # Stop the auto-connect timer since user interaction has occurred
         calculate_percentiles_flag = input("Do you want to calculate percentiles? (y/n): ").strip().lower() == 'y'
 
     if calculate_percentiles_flag:
@@ -282,10 +282,11 @@ if __name__ == "__main__":
         user_choice = input("\nPlease enter your choice: ").lower()
         logging.info("Prompting user choice.")
 
-        reset_timer()
+        # Stop the timer once the user interacts
+        stop_timer()
 
         if user_choice == 'p':
-            plc_connected = handle_plc_option()
+            handle_plc_option()
             logging.info("User chose to initiate PLC connection.")
 
         elif user_choice == 'i':
