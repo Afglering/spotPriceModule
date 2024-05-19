@@ -7,3 +7,4 @@ __pycache__/
 /build
 /dist
 /main.spec
+/percentiles_cache.pkl

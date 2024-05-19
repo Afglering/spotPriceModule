@@ -1,19 +1,20 @@
 # Import required modules
-from datetime import datetime
-from datetime import timedelta as td
+import threading
+import time
+from datetime import datetime, timedelta as td
+import logging
+
 from api_module import fetch_electricity_prices, fetch_exchange_rate, validate_exchange_rate_api_key
 from config_module import *
 from data_processing_module import *
 from excel_module import *
 from logging_module import setup_logging
 from plc_module import *
-import threading
-import time
 
 # ---------------------------------- Init ------------------------------------------------------
 
 # Initializing variables
-global plc_connected, prices_df,current_hour_price_DK1_EUR, daily_max_eur, daily_min_eur, price_diff_eur, avg_price_eur, x_max_percentile, y_min_percentile
+global plc_connected, prices_df, current_hour_price_DK1_EUR, daily_max_eur, daily_min_eur, price_diff_eur, avg_price_eur, x_max_percentile, y_min_percentile
 current_hour_price_DK1_EUR = None
 current_hour_price_DK2_EUR = None
 x_max_percentile = None
@@ -25,6 +26,7 @@ data_to_write = None
 client = None
 prices_df = None
 calculate_percentiles_flag = True 
+timer_thread = None
 
 # Setup logging
 setup_logging()
@@ -64,8 +66,27 @@ if data:
     # Load the last cached percentiles
     x_last, y_last = load_cached_percentiles()
 
-
 # ---------------------------------- Init Methods ------------------------------------------------
+
+def start_timer():
+    global timer_thread
+    timer_thread = threading.Timer(30.0, auto_connect_to_plc)
+    timer_thread.start()
+
+def auto_connect_to_plc():
+    print("No user interaction detected. Attempting to connect to PLC with cached values...")
+    try:
+        handle_plc_option(auto=True)
+    except Exception as e:
+        logging.error(f"Automatic PLC connection failed: {e}")
+        print(f"Automatic PLC connection failed: {e}")
+
+def reset_timer():
+    global timer_thread
+    if timer_thread:
+        timer_thread.cancel()
+    start_timer()
+
 def percentile():
     global x_max_percentile, y_min_percentile  # Declare global variables
 
@@ -73,7 +94,7 @@ def percentile():
     x_last, y_last = load_cached_percentiles()
 
     x_input = input(f"Enter the xth maximum percentile (MIN: 0.01, MAX: 0.99), or press ENTER to use last value ({x_last}): ")
-    y_input = input(f"Enter the yth minimum percentile (MIN: 0.01, MAX: 0.99),, or press ENTER to use last value ({y_last}):\n")
+    y_input = input(f"Enter the yth minimum percentile (MIN: 0.01, MAX: 0.99), or press ENTER to use last value ({y_last}):\n")
 
     # Use cached/default values if user does not input anything
     x = float(x_input) if x_input else (float(x_last) if x_last is not None else 0.66)
@@ -93,12 +114,10 @@ def percentile():
     # Return only the calculated values, as we are no longer returning the DataFrame
     return calc_x_max, calc_y_min
 
-
-
 def info():
     print("\n*** CURRENT HOUR PRICE POINT ***")
     if current_hour_price_DK1_EUR is not None:
-        print(f'The price for the current hour ({dt.now().hour}) is {current_hour_price_DK1_EUR:.2f} EUR/MWh for DK1\n')
+        print(f'The price for the current hour ({datetime.now().hour}) is {current_hour_price_DK1_EUR:.2f} EUR/MWh for DK1\n')
     else:
         print("Current hour price for DK1 is not available.")
 
@@ -106,14 +125,13 @@ def info():
     print(f'The daily max price point is {daily_max_eur:.2f} EUR/MWh\n')
 
     print("*** DAILY MIN PRICE ***")
-    print(f'The daily minimun price point is {daily_min_eur:.2f} EUR/MWh\n')
+    print(f'The daily minimum price point is {daily_min_eur:.2f} EUR/MWh\n')
 
     print("*** SPOT PRICE DIFFERENCE ***")
     print(f'The price difference between the daily minimum and maximum is {price_diff_eur:.2f} EUR/MWh\n')
 
     print("*** DAILY PRICE AVERAGE ***")
     print(f'The average price for the day is {avg_price_eur:.2f} EUR/MWh\n')
-
 
 def plc_update_thread():
     global prices_df, current_hour_price_DK1_EUR, price_diff_eur, avg_price_eur, x_max_percentile, y_min_percentile, calculate_percentiles_flag
@@ -122,7 +140,7 @@ def plc_update_thread():
         # Perform the first update immediately
         perform_update()
         logging.info("Completed PLC update cycle. Next update in 1 hour.\n")
-        print("Completed PLC update cycle. Next update in 1 hour.\n", flush = True)
+        print("Completed PLC update cycle. Next update in 1 hour.\n", flush=True)
 
         while plc_connected:
             # Calculate the time until the next hour begins
@@ -140,7 +158,7 @@ def plc_update_thread():
             # Perform update at the start of the new hour
             perform_update()
             logging.info("Completed PLC update cycle. Next update in 1 hour.\n")
-            print("Completed PLC update cycle. Next update in 1 hour.\n", flush = True)
+            print("Completed PLC update cycle. Next update in 1 hour.\n", flush=True)
 
     except Exception as e:
         logging.error(f"Error in PLC update thread: {e}")
@@ -178,61 +196,50 @@ def perform_update():
             success = write_data_to_plc(client, address, value, scaling_factor, unit_id)
             if success:
                 logging.info(f"Successfully updated register {address} with value {value}.")
-                print(f"PLC Update: Successfully updated register {address} with value {value}.", flush = True)
+                print(f"PLC Update: Successfully updated register {address} with value {value}.", flush=True)
             else:
                 logging.error(f"Failed to update register {address} with value {value}.")
     else:
         logging.error(f"Failed to fetch electricity prices. Status code: {status_code}")
 
-
-def handle_plc_option():
+def handle_plc_option(auto=False):
     global plc_connected, client, calculate_percentiles_flag, x_max_percentile, y_min_percentile
-    plc_connected = False
 
-    # First, ask if the user wants to calculate percentiles
-    calculate_percentiles_decision = input("Do you want to calculate percentiles? (y/n): ").strip().lower()
-    calculate_percentiles_flag = (calculate_percentiles_decision == 'y')
-
-    # If the user wants to calculate percentiles, then proceed to ask for the specific values
-    if calculate_percentiles_flag:
-        percentile()  # Call the function that prompts for x and y values and processes them
+    if auto:
+        calculate_percentiles_flag = False  # Using cached values, no user interaction
     else:
-        flush_cache() 
-        # If not calculating percentiles, set default values or indicate bypass
-        x_max_percentile, y_min_percentile = None, None  # Indicating bypass or default state
+        calculate_percentiles_flag = input("Do you want to calculate percentiles? (y/n): ").strip().lower() == 'y'
 
-    # Proceed with the PLC connection process
-    connect_to_plc = input("Do you want to connect to the PLC? (y/n): ").strip().lower()
-    if connect_to_plc == 'y':
+    if calculate_percentiles_flag:
+        percentile()
+    else:
+        x_max_percentile, y_min_percentile = load_cached_percentiles()
+        if x_max_percentile is None or y_min_percentile is None:
+            x_max_percentile, y_min_percentile = 0.66, 0.33  # Default values if cache is empty
+
+    if auto or input("Do you want to connect to the PLC? (y/n): ").strip().lower() == 'y':
         client = setup_plc_client(IP_ADDRESS=MOXA_IP_ADDRESS, PORT=MOXA_PORT)
         if client:
             plc_connected = True
             logging.info("Successfully connected to the PLC.")
             print("Connection to the PLC was successful.\n")
 
-            # Start the PLC update thread
             plc_thread = threading.Thread(target=plc_update_thread)
             plc_thread.start()
 
-            # Keep the PLC updates running until the user decides to stop
             while True:
-                user_input = input("Type 'exit' to stop PLC updates and return to the main menu: \n\n").strip().lower()
-                if user_input == 'exit':
+                if not auto and input("Type 'exit' to stop PLC updates and return to the main menu: ").strip().lower() == 'exit':
                     plc_connected = False
                     print("Stopping PLC updates...\n")
                     break
 
-            # Ensure the PLC update thread is properly closed
             plc_thread.join()
             logging.info("PLC update thread has finished.")
             print("PLC updates have been stopped.\n")
         else:
             logging.error("Failed to connect to the PLC.")
             print("Failed to connect to the PLC. Please check your connection settings.\n")
-    else:
-        print("PLC connection canceled by user.")
 
-    # Cleanup or finalize actions if necessary before exiting the function
     if client and client.is_socket_open():
         client.close()
         logging.info("PLC connection closed.")
@@ -251,60 +258,56 @@ def handle_excel_option(prices_df, percentiles_df):
     export_to_excel(prices_df, percentiles_df)
     print("Successfully exported data!")
 
-
 def exit_program():
     print("Exiting program.")
     logging.info("Existing program.")
     exit()
 
-
 # ---------------------------------- Main program flow -------------------------------------------
 
+if __name__ == "__main__":
+    start_timer()
+    while True:
+        print_logo()
+        print("\n           This program is the intellectual property of Alexander Flor Glering "
+              "\n                                 All Rights Reserved.")
 
-while True:
-    # Print the logo
-    print_logo()
-    print("\n           This program is the intellectual property of Alexander Flor Glering "
-          "\n                                 All Rights Reserved.")
+        print("\n*** Main Menu ***")
+        print("1. See current prices (i)")
+        print("2. Connect to PLC (p)")
+        print("3. Save to Excel (x)")
+        print("4. Quit (q)\n")
+        print("INFO: THIS PROGRAM ONLY RUNS FOR AS LONG AS THIS WINDOW IS OPEN. IF YOU CLOSE IT, THE PROGRAM WILL STOP.\n")
 
-    print("\n*** Main Menu ***")
-    print("1. See current prices (i)")
-    print("2. Connect to PLC (p)")
-    print("3. Save to Excel (x)")
-    print("4. Quit (q)\n")
-    print("INFO: THIS PROGRAM ONLY RUNS FOR AS LONG AS THIS WINDOW IS OPEN. IF YOU CLOSE IT, THE PROGRAM WILL STOP.\n")
+        user_choice = input("\nPlease enter your choice: ").lower()
+        logging.info("Prompting user choice.")
 
-    user_choice = input("\nPlease enter your choice: ").lower()
-    logging.info("Prompting user choice.")
+        reset_timer()
 
-    if user_choice == 'p':
-        plc_connected = handle_plc_option()  # This function now includes percentile decision making
-        logging.info("User chose to initiate PLC connection.")
+        if user_choice == 'p':
+            plc_connected = handle_plc_option()
+            logging.info("User chose to initiate PLC connection.")
 
-    elif user_choice == 'i':
-        info()
-        logging.info("User chose to see daily info.")
+        elif user_choice == 'i':
+            info()
+            logging.info("User chose to see daily info.")
 
-    elif user_choice == 'x': 
-        handle_excel_option(prices_df, None)  
-        logging.info("User chose to print to Excel.")
+        elif user_choice == 'x':
+            handle_excel_option(prices_df, None)
+            logging.info("User chose to print to Excel.")
 
-    elif user_choice == 'q':
-        confirm_exit = input("Are you sure you want to exit? (y/n): ").lower()
-        if confirm_exit == 'y':
-            logging.info("Exiting program.")
-            print("Goodbye!")
-            break
+        elif user_choice == 'q':
+            confirm_exit = input("Are you sure you want to exit? (y/n): ").lower()
+            if confirm_exit == 'y':
+                logging.info("Exiting program.")
+                print("Goodbye!")
+                break
+
         else:
-            continue  # Return to the main menu if the user decides not to exit
+            print("Invalid option. Please enter 'p', 'x', or 'q'.")
 
-    else:
-        print("Invalid option. Please enter 'p', 'x', or 'q'.")
-        continue  # Return to the main menu to prompt the user again
-
-    # After each process, ask the user if they want to return to the main menu or exit
-    after_process_choice = input("\nDo you want to return to the main menu (m) or quit (q)? ").lower()
-    if after_process_choice == 'q':
-        print("Goodbye!")
-        logging.info("Exiting program.")
-        break  # Exit the program
+        after_process_choice = input("\nDo you want to return to the main menu (m) or quit (q)? ").lower()
+        if after_process_choice == 'q':
+            print("Goodbye!")
+            logging.info("Exiting program.")
+            break
